@@ -423,6 +423,9 @@ function buildShareText(){
       if(run.cat==='player'){
         const balls='\uD83C\uDFD0'.repeat(run.count);
         text+=run.name+' '+balls+' '+score+nl;
+      } else if(run.cat==='recvOur'){
+        const pts=run.count===1?'サーブ権取得':'サーブ権取得 +'+run.count+'点';
+        text+=run.name+' '+pts+' '+score+nl;
       } else {
         const pts=run.count===1?'得点':'+'+run.count+'点';
         text+=run.name+' '+pts+' '+score+nl;
