@@ -16,18 +16,14 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 .btn { background: transparent; border: 1px solid #ddd; border-radius: 10px; padding: 9px 16px; font-size: 14px; cursor: pointer; color: #333; font-family: inherit; -webkit-appearance: none; }
 .btn:active { opacity: 0.7; }
 .btn-primary { background: #185FA5; border-color: #185FA5; color: white; }
-.btn-line { background: #06C755; border-color: #06C755; color: white; font-weight: 600; }
+.btn-line { background: #06C755; border-color: #06C755; color: white; font-weight: 600; font-size: 15px; padding: 13px 16px; }
 .btn-danger-soft { border-color: #ddd; color: #999; font-size: 12px; }
-
-/* team name */
 .team-names { display: flex; gap: 8px; align-items: center; }
 .team-names input { flex: 1; height: 40px; font-size: 15px; padding: 0 12px; border: 1px solid #ddd; border-radius: 10px; background: white; color: #111; font-family: inherit; text-align: center; font-weight: 600; }
-.team-names input:focus { outline: none; border-color: #185FA5; }
+.team-names input:focus { outline: none; }
 .team-names input.our-input:focus { border-color: #185FA5; }
 .team-names input.them-input:focus { border-color: #A32D2D; }
 .team-vs { font-size: 13px; color: #bbb; font-weight: 600; flex-shrink: 0; }
-
-/* member */
 .member-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .save-badge { font-size: 11px; color: #3B6D11; display: flex; align-items: center; gap: 4px; }
 .save-dot { width: 6px; height: 6px; border-radius: 50%; background: #3B6D11; }
@@ -37,14 +33,10 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 #member-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; border: 1px solid #e8e8e8; font-size: 14px; background: #f8f8f8; color: #333; user-select: none; white-space: nowrap; }
 .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.chip-x { color: #bbb; cursor: pointer; font-size: 13px; margin-left: 2px; padding: 2px; }
-
-/* tabs */
+.chip-x { color: #bbb; cursor: pointer; font-size: 13px; margin-left: 2px; }
 .tabs { display: flex; border-bottom: 1px solid #eee; margin-bottom: 16px; }
 .tab { flex: 1; padding: 10px 4px; font-size: 13px; cursor: pointer; color: #999; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; font-family: inherit; text-align: center; }
 .tab.active { color: #185FA5; border-bottom-color: #185FA5; font-weight: 600; }
-
-/* scoreboard */
 #scoreboard { display: flex; border-radius: 14px; overflow: hidden; border: 1px solid #eee; margin-bottom: 14px; }
 .score-side { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 16px 8px; gap: 12px; }
 .score-side.our  { background: #EBF4FD; }
@@ -61,44 +53,25 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 .score-divider { width: 1px; background: #eee; }
 .set-info { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
 .set-badge { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: #f5f5f5; color: #666; border: 1px solid #eee; }
-
-/* set history */
 .set-history { background: #f8f8f8; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
 .set-history-title { font-size: 11px; color: #999; font-weight: 600; margin-bottom: 6px; }
-.set-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid #eee; }
+.set-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #eee; }
 .set-row:last-child { border-bottom: none; }
 .set-row-label { color: #888; }
-.set-row-score { font-weight: 700; }
-.set-row-score.win { color: #185FA5; }
-.set-row-score.lose { color: #A32D2D; }
-
+.set-row-score.win { color: #185FA5; font-weight: 700; }
+.set-row-score.lose { color: #A32D2D; font-weight: 700; }
 .log-area { max-height: 120px; overflow-y: auto; background: #f8f8f8; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #666; line-height: 2; -webkit-overflow-scrolling: touch; }
 .log-entry { display: flex; gap: 6px; }
 .lnum { color: #bbb; min-width: 22px; }
 .log-our  { color: #185FA5; font-weight: 600; }
 .log-them { color: #A32D2D; font-weight: 600; }
 .log-src  { font-size: 11px; color: #bbb; }
-
-/* set end modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
-.modal { background: white; border-radius: 20px; padding: 24px; width: 100%; max-width: 340px; }
-.modal-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 4px; }
-.modal-subtitle { font-size: 13px; color: #999; text-align: center; margin-bottom: 20px; }
-.modal-score { display: flex; gap: 0; border-radius: 12px; overflow: hidden; border: 1px solid #eee; margin-bottom: 20px; }
-.modal-score-side { flex: 1; padding: 16px 8px; text-align: center; }
-.modal-score-side.our  { background: #EBF4FD; }
-.modal-score-side.them { background: #FDEBEB; }
-.modal-score-team { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 6px; }
-.modal-score-num { font-size: 48px; font-weight: 700; }
-.modal-score-num.our  { color: #0C447C; }
-.modal-score-num.them { color: #7A1F1F; }
-.modal-result { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 20px; }
-.modal-result.win { color: #185FA5; }
-.modal-result.lose { color: #A32D2D; }
-.modal-result.draw { color: #888; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
+.modal { background: white; border-radius: 24px 24px 0 0; padding: 20px 20px 36px; width: 100%; max-width: 480px; }
+.modal-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 14px; }
+#share-preview-wrap { border-radius: 12px; overflow: hidden; margin-bottom: 14px; background: #111; }
+#share-canvas { display: block; width: 100%; height: auto; }
 .modal-btns { display: flex; flex-direction: column; gap: 10px; }
-
-/* IE */
 .ie-block-title { font-size: 14px; font-weight: 600; color: #333; margin: 14px 0 4px; padding-top: 14px; border-top: 1px solid #f0f0f0; }
 .ie-block-title:first-child { margin-top: 0; border-top: none; padding-top: 0; }
 .ie-hint { font-size: 11px; color: #aaa; margin-bottom: 10px; line-height: 1.6; }
@@ -117,8 +90,6 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 .scard { flex: 1 1 60px; background: #f8f8f8; border-radius: 12px; padding: 10px 8px; text-align: center; }
 .scard .sl { font-size: 10px; color: #999; margin-bottom: 4px; line-height: 1.4; }
 .scard .sv { font-size: 22px; font-weight: 700; }
-
-/* court */
 #court { border-radius: 12px; display: block; touch-action: none; }
 #court-area { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
 .bench-box { background: #f8f8f8; border: 2px dashed #ddd; border-radius: 12px; min-height: 56px; padding: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
@@ -127,8 +98,6 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 </head>
 <body>
 <div id="app">
-
-  <!-- チーム名 -->
   <div class="panel">
     <div class="panel-title">チーム名</div>
     <div class="team-names">
@@ -138,7 +107,6 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
     </div>
   </div>
 
-  <!-- メンバー -->
   <div class="panel">
     <div class="member-header">
       <span class="panel-title" style="margin-bottom:0;">メンバー登録</span>
@@ -154,7 +122,6 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
     </div>
   </div>
 
-  <!-- メインパネル -->
   <div class="panel">
     <div class="tabs">
       <button class="tab active" onclick="showTab('score',this)">スコア</button>
@@ -162,7 +129,6 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
       <button class="tab" onclick="showTab('formation',this)">配置</button>
     </div>
 
-    <!-- スコア -->
     <div id="score-section">
       <div class="set-info" id="set-info"></div>
       <div id="scoreboard">
@@ -184,13 +150,10 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
           </div>
         </div>
       </div>
-
-      <!-- セット履歴 -->
       <div class="set-history" id="set-history" style="display:none;">
         <div class="set-history-title">セット結果</div>
         <div id="set-history-body"></div>
       </div>
-
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
         <button class="btn" onclick="endSet()">セット終了</button>
         <button class="btn" onclick="resetAll()">全リセット</button>
@@ -199,36 +162,31 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
       <div class="log-area" id="log-area"><span style="color:#bbb">まだ得点がありません</span></div>
     </div>
 
-    <!-- IE -->
     <div id="ie-section" style="display:none;">
       <div class="summary-row" id="ie-summary"></div>
       <div class="ie-block-title">自チームのサーブ（選手ごと）</div>
       <div class="ie-hint">「決まった」→ 自チーム+1点 ／ 「取られた」→ 相手+1点 が自動加算</div>
       <table class="ie-table">
-        <thead>
-          <tr>
-            <th>選手</th>
-            <th>決まった<br><span style="color:#3B6D11;font-size:10px;">自+1</span></th>
-            <th>取られた<br><span style="color:#A32D2D;font-size:10px;">相手+1</span></th>
-            <th>IE</th>
-          </tr>
-        </thead>
+        <thead><tr>
+          <th>選手</th>
+          <th>決まった<br><span style="color:#3B6D11;font-size:10px;">自+1</span></th>
+          <th>取られた<br><span style="color:#A32D2D;font-size:10px;">相手+1</span></th>
+          <th>IE</th>
+        </tr></thead>
         <tbody id="ie-serve-body"></tbody>
       </table>
       <div class="ie-block-title">相手サーブからの失点</div>
       <div class="ie-hint">相手サーブで自チームが失点 → 相手+1点 が自動加算</div>
       <table class="ie-table">
         <thead><tr><th style="text-align:left;">項目</th><th>回数</th><th></th></tr></thead>
-        <tbody>
-          <tr>
-            <td>相手サーブ失点</td>
-            <td><span class="ie-val neg" id="recv-loss-val">0</span></td>
-            <td>
-              <button class="ie-btn m" onclick="changeRecvLoss(-1)">−</button>
-              <button class="ie-btn p" onclick="changeRecvLoss(1)">＋</button>
-            </td>
-          </tr>
-        </tbody>
+        <tbody><tr>
+          <td>相手サーブ失点</td>
+          <td><span class="ie-val neg" id="recv-loss-val">0</span></td>
+          <td>
+            <button class="ie-btn m" onclick="changeRecvLoss(-1)">−</button>
+            <button class="ie-btn p" onclick="changeRecvLoss(1)">＋</button>
+          </td>
+        </tr></tbody>
       </table>
       <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn" onclick="resetIE()">IEリセット</button>
@@ -236,7 +194,6 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
       </div>
     </div>
 
-    <!-- フォーメーション -->
     <div id="formation-section" style="display:none;">
       <div id="court-area">
         <div style="flex-shrink:0;"><canvas id="court" width="260" height="380"></canvas></div>
@@ -259,32 +216,23 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
   <div class="safe-bottom"></div>
 </div>
 
-<!-- セット終了モーダル -->
+<!-- セット終了モーダル (下からスライド) -->
 <div class="modal-overlay" id="modal" style="display:none;" onclick="closeModal(event)">
-  <div class="modal">
-    <div class="modal-title" id="modal-title">セット終了</div>
-    <div class="modal-subtitle" id="modal-subtitle"></div>
-    <div class="modal-score">
-      <div class="modal-score-side our">
-        <div class="modal-score-team" id="modal-our-name">自チーム</div>
-        <div class="modal-score-num our" id="modal-our-score">0</div>
-      </div>
-      <div class="modal-score-side them">
-        <div class="modal-score-team" id="modal-them-name">相手</div>
-        <div class="modal-score-num them" id="modal-them-score">0</div>
-      </div>
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title" id="modal-title">第1セット 終了</div>
+    <div id="share-preview-wrap">
+      <canvas id="share-canvas"></canvas>
     </div>
-    <div class="modal-result" id="modal-result"></div>
     <div class="modal-btns">
-      <button class="btn btn-line" onclick="shareToLine()">LINEで送る</button>
-      <button class="btn btn-primary" onclick="goNextSet()">次のセットへ</button>
+      <button class="btn btn-line" onclick="shareImage()">📤 LINEで送る</button>
+      <button class="btn btn-primary" onclick="goNextSet()">次のセットへ →</button>
       <button class="btn" onclick="closeModalOnly()">閉じる</button>
     </div>
   </div>
 </div>
 
 <script>
-const CW=260,CH=380;
+const CW=260, CH=380;
 const canvas=document.getElementById('court');
 const ctx=canvas.getContext('2d');
 const POSITIONS=[
@@ -301,47 +249,33 @@ let ourScore=0,themScore=0,sets=[],log=[];
 let ourTeamName='自チーム',themTeamName='相手チーム';
 let pendingSetResult=null;
 
-// ---- TEAM NAMES ----
 function updateTeamNames(){
   ourTeamName=document.getElementById('our-team-name').value||'自チーム';
   themTeamName=document.getElementById('them-team-name').value||'相手チーム';
   document.getElementById('score-our-name').textContent=ourTeamName;
   document.getElementById('score-them-name').textContent=themTeamName;
-  try{ localStorage.setItem(TEAM_KEY,JSON.stringify({our:ourTeamName,them:themTeamName})); }catch(e){}
+  try{localStorage.setItem(TEAM_KEY,JSON.stringify({our:ourTeamName,them:themTeamName}));}catch(e){}
 }
 function loadTeamNames(){
   try{
     const raw=localStorage.getItem(TEAM_KEY);
-    if(raw){
-      const t=JSON.parse(raw);
-      document.getElementById('our-team-name').value=t.our||'自チーム';
-      document.getElementById('them-team-name').value=t.them||'相手チーム';
-      updateTeamNames();
-    }
+    if(raw){const t=JSON.parse(raw);document.getElementById('our-team-name').value=t.our||'自チーム';document.getElementById('them-team-name').value=t.them||'相手チーム';updateTeamNames();}
   }catch(e){}
 }
-
-// ---- STORAGE ----
-function saveMembers(){
-  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(members)); flashSave(); }catch(e){}
-}
+function saveMembers(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(members));flashSave();}catch(e){}}
 function loadMembers(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY);
-    if(raw){ JSON.parse(raw).forEach(m=>{members.push(m);if(!ieData[m.name])ieData[m.name]={plus:0,minus:0};});
-      renderMemberList();members.forEach(m=>addToBench(m.name)); }
+    if(raw){JSON.parse(raw).forEach(m=>{members.push(m);if(!ieData[m.name])ieData[m.name]={plus:0,minus:0};});renderMemberList();members.forEach(m=>addToBench(m.name));}
   }catch(e){}
 }
 function flashSave(){const b=document.getElementById('save-badge');b.style.color='#3B6D11';setTimeout(()=>b.style.color='',1000);}
 function clearAllMembers(){
   if(!confirm('メンバーを全削除しますか？'))return;
-  members=[];onCourt={};ieData={};
-  document.getElementById('bench').innerHTML='';
-  renderMemberList();drawCourt();saveMembers();
-  if(currentTab==='ie')renderIE();
+  members=[];onCourt={};ieData={};document.getElementById('bench').innerHTML='';
+  renderMemberList();drawCourt();saveMembers();if(currentTab==='ie')renderIE();
 }
 
-// ---- TABS ----
 function showTab(tab,el){
   currentTab=tab;
   ['score','ie','formation'].forEach(t=>{document.getElementById(t+'-section').style.display=t===tab?'':'none';});
@@ -351,7 +285,6 @@ function showTab(tab,el){
   if(tab==='formation')drawCourt();
 }
 
-// ---- SCORE ----
 function addPoint(side,delta,src){
   if(side==='our')ourScore=Math.max(0,ourScore+delta);
   else themScore=Math.max(0,themScore+delta);
@@ -381,93 +314,187 @@ function updateLog(){
   }).join('');
 }
 
+// ---- SET END & SHARE IMAGE ----
 function endSet(){
-  // モーダル表示
-  const setNum=sets.length+1;
-  const won=ourScore>themScore;
-  const draw=ourScore===themScore;
-  pendingSetResult={our:ourScore,them:themScore,setNum};
-
-  document.getElementById('modal-title').textContent=`第${setNum}セット 終了`;
-  document.getElementById('modal-subtitle').textContent=`${ourTeamName} vs ${themTeamName}`;
-  document.getElementById('modal-our-name').textContent=ourTeamName;
-  document.getElementById('modal-them-name').textContent=themTeamName;
-  document.getElementById('modal-our-score').textContent=ourScore;
-  document.getElementById('modal-them-score').textContent=themScore;
-
-  const resultEl=document.getElementById('modal-result');
-  if(draw){ resultEl.textContent='引き分け'; resultEl.className='modal-result draw'; }
-  else if(won){ resultEl.textContent=`${ourTeamName} 勝利！`; resultEl.className='modal-result win'; }
-  else { resultEl.textContent=`${themTeamName} 勝利！`; resultEl.className='modal-result lose'; }
-
+  pendingSetResult={our:ourScore,them:themScore,setNum:sets.length+1};
+  document.getElementById('modal-title').textContent=`第${sets.length+1}セット 終了`;
+  buildShareImage();
   document.getElementById('modal').style.display='flex';
 }
 
-function buildShareText(){
-  const r=pendingSetResult;
-  const won=r.our>r.them,draw=r.our===r.them;
-  const resultStr=draw?'引き分け':won?`${ourTeamName} 勝利`:`${themTeamName} 勝利`;
+function buildShareImage(){
+  const SC=2;
+  const IW=480, IH=520;
+  const sc=document.getElementById('share-canvas');
+  sc.width=IW*SC; sc.height=IH*SC;
+  sc.style.width=IW+'px'; sc.style.height=IH+'px';
+  const c=sc.getContext('2d');
+  c.scale(SC,SC);
 
-  const pastSets=[...sets,r];
-  const ourWins=pastSets.filter(s=>s.our>s.them).length;
-  const themWins=pastSets.filter(s=>s.them>s.our).length;
+  // 背景
+  c.fillStyle='#111827';
+  c.fillRect(0,0,IW,IH);
 
-  let text=`🏐 第${r.setNum}セット結果\n`;
-  text+=`${ourTeamName} ${r.our} - ${r.them} ${themTeamName}\n`;
-  text+=`結果: ${resultStr}\n\n`;
-  if(pastSets.length>1){
-    text+=`【セット成績】\n`;
-    pastSets.forEach((s,i)=>{
-      const w=s.our>s.them?ourTeamName:s.them>s.our?themTeamName:'引き分け';
-      text+=`第${i+1}セット: ${s.our}-${s.them}（${w}）\n`;
-    });
-    text+=`\n通算: ${ourTeamName} ${ourWins}勝 / ${themTeamName} ${themWins}勝`;
+  // ヘッダー
+  c.fillStyle='rgba(255,255,255,0.06)';
+  c.fillRect(0,0,IW,52);
+  c.fillStyle='rgba(255,255,255,0.9)';
+  c.font='bold 16px -apple-system,sans-serif';
+  c.textAlign='center';
+  c.textBaseline='middle';
+  c.fillText(`第${pendingSetResult.setNum}セット`, IW/2, 26);
+
+  // コートを縮小描画
+  const courtX=30, courtY=62;
+  const cw=IW-60, ch=Math.round((IH-60-60)* 0.95);
+  drawCourtImg(c,courtX,courtY,cw,ch);
+
+  // 相手コート上半分オーバーレイ
+  const halfH=ch*0.5;
+  c.fillStyle='rgba(120,30,30,0.72)';
+  rrFill(c,courtX,courtY,cw,halfH-2,10);
+
+  // 相手チーム名
+  c.fillStyle='rgba(255,200,200,0.95)';
+  c.font='bold 14px -apple-system,sans-serif';
+  c.textAlign='center'; c.textBaseline='middle';
+  c.fillText(themTeamName, courtX+cw/2, courtY+halfH*0.2);
+
+  // 相手スコア
+  c.fillStyle='#ff8080';
+  c.font=`bold 80px -apple-system,sans-serif`;
+  c.fillText(String(pendingSetResult.them), courtX+cw/2, courtY+halfH*0.62);
+
+  // 自チームコート下半分オーバーレイ
+  const botY=courtY+halfH+2;
+  const botH=ch-halfH-2;
+  c.fillStyle='rgba(12,68,124,0.72)';
+  rrFill(c,courtX,botY,cw,botH,10);
+
+  // 自チーム名
+  c.fillStyle='rgba(180,220,255,0.95)';
+  c.font='bold 14px -apple-system,sans-serif';
+  c.textAlign='center'; c.textBaseline='middle';
+  c.fillText(ourTeamName, courtX+cw/2, botY+botH*0.22);
+
+  // 自チームスコア
+  c.fillStyle='#80cfff';
+  c.font=`bold 80px -apple-system,sans-serif`;
+  c.fillText(String(pendingSetResult.our), courtX+cw/2, botY+botH*0.68);
+
+  // 選手を重ねて描く
+  drawPlayersImg(c,courtX,courtY,cw,ch);
+
+  // 通算
+  const pastSets=[...sets,pendingSetResult];
+  const ow=pastSets.filter(s=>s.our>s.them).length;
+  const tw=pastSets.filter(s=>s.them>s.our).length;
+  c.fillStyle='rgba(255,255,255,0.7)';
+  c.font='13px -apple-system,sans-serif';
+  c.textAlign='center'; c.textBaseline='middle';
+  c.fillText(`通算  ${ourTeamName} ${ow}勝 ／ ${themTeamName} ${tw}勝`, IW/2, courtY+ch+22);
+
+  if(sets.length>0){
+    c.fillStyle='rgba(255,255,255,0.4)';
+    c.font='11px -apple-system,sans-serif';
+    const t=sets.map((s,i)=>`第${i+1}セット ${s.our}-${s.them}`).join('　');
+    c.fillText(t, IW/2, courtY+ch+40);
   }
-  return text;
 }
 
-function shareToLine(){
-  const text=buildShareText();
-  const encoded=encodeURIComponent(text);
-  // LINEのシェアURL
-  window.open(`https://line.me/R/msg/text/?${encoded}`,'_blank');
+function drawCourtImg(c,x,y,w,h){
+  c.fillStyle='#2d7a3a';
+  rrFill(c,x,y,w,h,12);
+  c.fillStyle='rgba(0,0,0,0.15)';
+  c.fillRect(x+12,y+12,w-24,h*0.5-12);
+  c.strokeStyle='rgba(255,255,255,0.6)';
+  c.lineWidth=1.5;
+  c.strokeRect(x+12,y+12,w-24,h-24);
+  c.lineWidth=4; c.strokeStyle='rgba(255,255,255,0.9)';
+  c.beginPath();c.moveTo(x+12,y+h*0.5);c.lineTo(x+w-12,y+h*0.5);c.stroke();
+  c.lineWidth=1.5; c.strokeStyle='rgba(255,255,255,0.4)'; c.setLineDash([4,4]);
+  c.beginPath();c.moveTo(x+12,y+h*0.68);c.lineTo(x+w-12,y+h*0.68);c.stroke();
+  c.setLineDash([]);
+}
+
+function drawPlayersImg(c,x,y,w,h){
+  const sx=w/CW, sy=h/CH;
+  POSITIONS.forEach(p=>{
+    const px=x+p.x*CW*sx, py=y+p.y*CH*sy, pl=onCourt[p.id];
+    const r=22*Math.min(sx,sy);
+    c.beginPath(); c.arc(px,py,r,0,Math.PI*2);
+    c.fillStyle=pl?pl.color:'rgba(0,0,0,0.2)'; c.fill();
+    c.strokeStyle=pl?'white':'rgba(255,255,255,0.3)'; c.lineWidth=pl?2:1; c.stroke();
+    c.textAlign='center'; c.textBaseline='middle';
+    if(pl){
+      c.fillStyle='white'; c.font=`bold ${Math.round(11*sx)}px -apple-system,sans-serif`;
+      c.fillText(pl.name.slice(0,4),px,py-4*sy);
+      c.font=`${Math.round(9*sx)}px -apple-system,sans-serif`;
+      c.fillStyle='rgba(255,255,255,0.8)'; c.fillText(p.label,px,py+9*sy);
+    } else {
+      c.fillStyle='rgba(255,255,255,0.5)'; c.font=`bold ${Math.round(11*sx)}px -apple-system,sans-serif`;
+      c.fillText(p.label,px,py);
+    }
+    c.textBaseline='alphabetic';
+  });
+}
+
+function rrFill(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);
+  c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);
+  c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);
+  c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);
+  c.closePath();c.fill();
+}
+
+async function shareImage(){
+  const sc=document.getElementById('share-canvas');
+  sc.toBlob(async blob=>{
+    if(!blob){alert('画像の生成に失敗しました');return;}
+    const file=new File([blob],'score.png',{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file],title:`第${pendingSetResult.setNum}セット ${ourTeamName} ${pendingSetResult.our}-${pendingSetResult.them} ${themTeamName}`}); }
+      catch(e){ if(e.name!=='AbortError') fallbackDownload(); }
+    } else {
+      fallbackDownload();
+    }
+  },'image/png');
+}
+
+function fallbackDownload(){
+  const sc=document.getElementById('share-canvas');
+  const a=document.createElement('a');
+  a.download=`set${pendingSetResult.setNum}_score.png`;
+  a.href=sc.toDataURL('image/png');
+  a.click();
+  alert('画像を保存しました。LINEのトークから送ってください。');
 }
 
 function goNextSet(){
-  if(pendingSetResult) sets.push({our:pendingSetResult.our,them:pendingSetResult.them});
-  ourScore=0;themScore=0;log=[];
-  pendingSetResult=null;
+  if(pendingSetResult)sets.push({our:pendingSetResult.our,them:pendingSetResult.them});
+  ourScore=0;themScore=0;log=[];pendingSetResult=null;
   document.getElementById('modal').style.display='none';
-  updateScore();
-  updateSetHistory();
+  updateScore();updateSetHistory();
 }
-
-function closeModalOnly(){
-  document.getElementById('modal').style.display='none';
-}
-function closeModal(e){
-  if(e.target.id==='modal')closeModalOnly();
-}
+function closeModalOnly(){document.getElementById('modal').style.display='none';}
+function closeModal(e){if(e.target.id==='modal')closeModalOnly();}
 
 function updateSetHistory(){
-  const hist=document.getElementById('set-history');
-  const body=document.getElementById('set-history-body');
+  const hist=document.getElementById('set-history'),body=document.getElementById('set-history-body');
   if(!sets.length){hist.style.display='none';return;}
   hist.style.display='';
   body.innerHTML=sets.map((s,i)=>{
-    const won=s.our>s.them,lose=s.them>s.our;
-    const cls=won?'win':lose?'lose':'';
+    const cls=s.our>s.them?'win':s.them>s.our?'lose':'';
     return `<div class="set-row"><span class="set-row-label">第${i+1}セット</span><span class="set-row-score ${cls}">${s.our} - ${s.them}</span></div>`;
   }).join('');
 }
-
 function resetAll(){
   if(!confirm('全リセットしますか？'))return;
   ourScore=0;themScore=0;sets=[];log=[];pendingSetResult=null;
   updateScore();updateSetHistory();
 }
 
-// ---- IE ----
 function changeIEServe(name,type,delta){
   if(!ieData[name])ieData[name]={plus:0,minus:0};
   ieData[name][type]=Math.max(0,ieData[name][type]+delta);
@@ -524,7 +551,6 @@ function copyIE(){
   else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('コピーしました'));
 }
 
-// ---- MEMBERS ----
 function addMember(){
   const inp=document.getElementById('name-input'),name=inp.value.trim();
   if(!name)return;
@@ -553,7 +579,6 @@ function renderMemberList(){
 }
 document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter')addMember();});
 
-// ---- COURT ----
 function drawCourt(){
   ctx.clearRect(0,0,CW,CH);
   ctx.fillStyle='#2d7a3a';rr(ctx,0,0,CW,CH,12);ctx.fill();
@@ -598,14 +623,10 @@ function renderBenchChip(name){
   const m=members.find(m=>m.name===name);if(!m)return;
   const chip=document.createElement('div');chip.className='chip';chip.dataset.name=name;chip.style.cursor='pointer';
   chip.innerHTML=`<span class="chip-dot" style="background:${m.color}"></span>${name}`;
-  chip.addEventListener('click',()=>{
-    if(selectedBench===name){clearBenchSelection();}
-    else{clearBenchSelection();selectedBench=name;chip.style.outline='2px solid #185FA5';}
-  });
+  chip.addEventListener('click',()=>{if(selectedBench===name){clearBenchSelection();}else{clearBenchSelection();selectedBench=name;chip.style.outline='2px solid #185FA5';}});
   document.getElementById('bench').appendChild(chip);
 }
 
-// ---- INIT ----
 loadTeamNames();
 loadMembers();
 updateScore();
