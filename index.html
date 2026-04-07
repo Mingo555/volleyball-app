@@ -248,8 +248,12 @@ const CW=260, CH=380;
 const canvas=document.getElementById('court');
 const ctx=canvas.getContext('2d');
 const POSITIONS=[
-  {id:0,label:'OH',x:0.18,y:0.77},{id:1,label:'MB',x:0.50,y:0.77},{id:2,label:'OP',x:0.82,y:0.77},
-  {id:3,label:'OH',x:0.18,y:0.57},{id:4,label:'S',x:0.50,y:0.57},{id:5,label:'MB',x:0.82,y:0.57},
+  {id:0,label:'BL',name:'バックレフト',x:0.18,y:0.77},
+  {id:1,label:'C',name:'センター',x:0.50,y:0.77},
+  {id:2,label:'BR',name:'バックライト',x:0.82,y:0.77},
+  {id:3,label:'L',name:'レフト',x:0.18,y:0.57},
+  {id:4,label:'S',name:'セッター',x:0.50,y:0.57},
+  {id:5,label:'R',name:'ライト',x:0.82,y:0.57},
 ];
 const COLORS=['#185FA5','#A32D2D','#854F0B','#3B6D11','#533AB7','#993556','#0F6E56','#3a5f8a'];
 const STORAGE_KEY='vb_kids_members_v2';
