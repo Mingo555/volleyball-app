@@ -383,7 +383,7 @@ function buildShareText(){
   if(sets.length>0){
     text+=nl+sets.map((s,i)=>'第'+(i+1)+'セット: '+s.our+'-'+s.them).join('  ')+nl;
   }
-  text+=nl+'通算 '+ourTeamName+' '+ow+'勝 / '+themTeamName+' '+tw+'勝';
+  //text+=nl+'通算 '+ourTeamName+' '+ow+'勝 / '+themTeamName+' '+tw+'勝';
   return text;
 }
 
