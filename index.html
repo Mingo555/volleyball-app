@@ -236,6 +236,13 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
         </div>
       </div>
       <div style="margin-top:10px;font-size:11px;color:#bbb;">タップで配置 / もう一度タップで控えに戻す</div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f0;">
+        <div class="panel-title" style="margin-bottom:8px;">サーブ順設定</div>
+        <div style="font-size:11px;color:#bbb;margin-bottom:10px;">選手を配置後、サーブ順（1〜6）を設定してください</div>
+        <div id="serve-order-list"></div>
+        <button class="btn btn-primary" style="margin-top:10px;font-size:13px;" onclick="applyServeOrder()">サーブ順を確定</button>
+        <div style="font-size:11px;color:#bbb;margin-top:6px;" id="serve-order-status"></div>
+      </div>
     </div>
   </div>
   <div class="safe-bottom"></div>
@@ -281,6 +288,8 @@ const STORAGE_KEY='vb_kids_members_v2';
 const TEAM_KEY='vb_kids_teams';
 
 let members=[],onCourt={},ieData={},recvLoss=0,recvOk=0,serveMode='our';
+let serveOrder=[]; // [{name,order}] order=1〜6
+let currentServerIdx=0; // serveOrder内の現在のインデックス
 let selectedBench=null,currentTab='score';
 let ourScore=0,themScore=0,sets=[],log=[];
 let ourTeamName='自チーム',themTeamName='相手チーム';
@@ -529,7 +538,7 @@ function changeIEServe(name,type,delta){
 function changeRecvOk(delta){
   recvOk=Math.max(0,recvOk+delta);
   document.getElementById('recv-ok-val').textContent=recvOk;
-  if(delta===1){addPoint('our',1,'相手サーブ→カット成功');updateServeMode('our');}
+  if(delta===1){addPoint('our',1,'相手サーブ→カット成功');advanceServer();updateServeMode('our');}
   else if(ourScore>0){addPoint('our',-1);updateServeMode('them');}
   renderIESummary();
 }
@@ -650,6 +659,76 @@ function renderMemberList(){
 }
 document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter')addMember();});
 
+// ---- SERVE ORDER ----
+function renderServeOrderList(){
+  const list=document.getElementById('serve-order-list');
+  if(!list)return;
+  const courtPlayers=Object.values(onCourt).map(p=>p.name);
+  if(!courtPlayers.length){list.innerHTML='<div style="font-size:12px;color:#bbb;">先に選手をコートに配置してください</div>';return;}
+  list.innerHTML='';
+  courtPlayers.forEach(name=>{
+    const existing=serveOrder.find(s=>s.name===name);
+    const currentOrder=existing?existing.order:'';
+    const m=members.find(m=>m.name===name);
+    const color=m?m.color:'#888';
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f0f0f0;';
+    row.innerHTML=
+      '<span class="chip-dot" style="background:'+color+';display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;"></span>'+
+      '<span style="flex:1;font-size:14px;">'+name+'</span>'+
+      '<select data-name="'+name+'" style="width:60px;height:34px;border:1px solid #ddd;border-radius:8px;font-size:14px;text-align:center;font-family:inherit;">'+
+        '<option value="">-</option>'+
+        [1,2,3,4,5,6].map(n=>'<option value="'+n+'"'+(currentOrder==n?' selected':'')+'>'+n+'</option>').join('')+
+      '</select>';
+    list.appendChild(row);
+  });
+}
+
+function applyServeOrder(){
+  const list=document.getElementById('serve-order-list');
+  if(!list)return;
+  const selects=list.querySelectorAll('select');
+  const newOrder=[];
+  let valid=true;
+  const usedNums=new Set();
+  selects.forEach(sel=>{
+    const name=sel.dataset.name;
+    const val=parseInt(sel.value);
+    if(!isNaN(val)&&val>=1&&val<=6){
+      if(usedNums.has(val)){valid=false;}
+      usedNums.add(val);
+      newOrder.push({name,order:val});
+    }
+  });
+  if(!valid){
+    document.getElementById('serve-order-status').textContent='⚠ 同じ番号が重複しています';
+    document.getElementById('serve-order-status').style.color='#A32D2D';
+    return;
+  }
+  // 番号順にソート
+  newOrder.sort((a,b)=>a.order-b.order);
+  serveOrder=newOrder;
+  currentServerIdx=0;
+  document.getElementById('serve-order-status').textContent='✓ サーブ順を確定しました（'+newOrder.map(s=>s.order+'.'+s.name).join(' → ')+')';
+  document.getElementById('serve-order-status').style.color='#3B6D11';
+  drawCourt();
+  if(currentTab==='ie')renderIE();
+}
+
+function getCurrentServer(){
+  if(!serveOrder.length)return null;
+  return serveOrder[currentServerIdx%serveOrder.length];
+}
+
+function advanceServer(){
+  if(!serveOrder.length)return;
+  currentServerIdx=(currentServerIdx+1)%serveOrder.length;
+}
+
+function resetServer(){
+  currentServerIdx=0;
+}
+
 function drawCourt(){
   ctx.clearRect(0,0,CW,CH);
   ctx.fillStyle='#2d7a3a';rr(ctx,0,0,CW,CH,12);ctx.fill();
@@ -670,7 +749,12 @@ function drawCourt(){
     ctx.textAlign='center';ctx.textBaseline='middle';
     if(pl){
       ctx.fillStyle='white';ctx.font='bold 12px sans-serif';ctx.fillText(pl.name.slice(0,5),x,y-5);
-      ctx.font='10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.75)';ctx.fillText(p.label,x,y+10);
+      // サーブ順番号
+      const so=serveOrder.find(s=>s.name===pl.name);
+      if(so){
+        ctx.font='bold 10px sans-serif';ctx.fillStyle='rgba(255,255,0,0.95)';
+        ctx.fillText(so.order,x+18,y-18);
+      }
     } else {
       ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font='bold 14px sans-serif';ctx.fillText(p.label,x,y-3);
       ctx.font='10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.45)';ctx.fillText('空き',x,y+10);
@@ -682,8 +766,8 @@ function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo
 function posAt(cx,cy){for(const p of POSITIONS){const x=p.x*CW,y=p.y*CH;if(Math.hypot(cx-x,cy-y)<34)return p.id;}return -1;}
 function handleCourtTap(cx,cy){
   const idx=posAt(cx,cy);if(idx<0)return;
-  if(onCourt[idx]){addToBench(onCourt[idx].name);delete onCourt[idx];drawCourt();}
-  else if(selectedBench){const m=members.find(m=>m.name===selectedBench);if(m){onCourt[idx]={name:m.name,color:m.color};selectedBench=null;clearBenchSelection();drawCourt();}}
+  if(onCourt[idx]){addToBench(onCourt[idx].name);delete onCourt[idx];drawCourt();renderServeOrderList();}
+  else if(selectedBench){const m=members.find(m=>m.name===selectedBench);if(m){onCourt[idx]={name:m.name,color:m.color};selectedBench=null;clearBenchSelection();drawCourt();renderServeOrderList();}}
 }
 canvas.addEventListener('click',e=>{const r=canvas.getBoundingClientRect();handleCourtTap((e.clientX-r.left)*(CW/r.width),(e.clientY-r.top)*(CH/r.height));});
 canvas.addEventListener('touchend',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),t=e.changedTouches[0];handleCourtTap((t.clientX-r.left)*(CW/r.width),(t.clientY-r.top)*(CH/r.height));},{passive:false});
