@@ -387,33 +387,45 @@ function buildShareText(){
   const chronolog=[...log].reverse();
   if(chronolog.length>0){
     text+=nl+'【得点経過】'+nl;
-    // ランレングス圧縮: 連続する同チームをひとまとめ
+    // 各エントリを「表示カテゴリ」に変換してからまとめる
+    // カテゴリ: 'player'=個人サーブ得点, 'them'=相手チーム得点(自サーブ失点含む), 'recvOur'=相手サーブ中自得点, 'recvThem'=相手サーブ中失点
+    const entries=chronolog.map(e=>{
+      // 自チームサーブで決まった → 個人
+      if(e.side==='our'&&e.src&&e.src.indexOf('→相手')===-1&&e.src.indexOf('サーブ中')===-1){
+        const playerName=e.src.replace('サーブ','');
+        return {cat:'player',name:playerName,our:e.our,them:e.them};
+      }
+      // 相手チーム得点（自サーブ失点 or 相手サーブ失点）
+      if(e.side==='them'){
+        return {cat:'them',name:themTeamName,our:e.our,them:e.them};
+      }
+      // 相手サーブ中自チーム得点
+      if(e.side==='our'){
+        return {cat:'recvOur',name:ourTeamName,our:e.our,them:e.them};
+      }
+      return {cat:'them',name:themTeamName,our:e.our,them:e.them};
+    });
+
+    // 連続する同カテゴリ・同名をまとめる
     const runs=[];
-    chronolog.forEach(e=>{
+    entries.forEach(e=>{
       const last=runs[runs.length-1];
-      if(last&&last.side===e.side){
-        last.count++;
-        last.endOur=e.our;
-        last.endThem=e.them;
-        // 連続中に選手が変わったらチーム名に切り替え
-        if(last.src&&last.src!==e.src) last.src=null;
+      if(last&&last.cat===e.cat&&last.name===e.name){
+        last.count++;last.our=e.our;last.them=e.them;
       } else {
-        runs.push({side:e.side,count:1,endOur:e.our,endThem:e.them,src:e.src||null});
+        runs.push({cat:e.cat,name:e.name,count:1,our:e.our,them:e.them});
       }
     });
-    // 古い順に出力
+
+    // 出力
     runs.forEach(run=>{
-      const teamName=run.side==='our'?ourTeamName:themTeamName;
-      const score='('+run.endOur+'-'+run.endThem+')';
-      if(run.count===1){
-        // 1点なら選手名があれば使う
-        const who=run.src?run.src:teamName;
-        text+=who+' 得点 '+score+nl;
-      } else if(run.src){
-        // 連続で選手名が同じなら選手名表示
-        text+=run.src+' +'+run.count+'点連続 '+score+nl;
+      const score='('+run.our+'-'+run.them+')';
+      if(run.cat==='player'){
+        const balls='\uD83C\uDFD0'.repeat(run.count);
+        text+=run.name+' '+balls+' '+score+nl;
       } else {
-        text+=teamName+' +'+run.count+'点連続 '+score+nl;
+        const pts=run.count===1?'得点':'+'+run.count+'点';
+        text+=run.name+' '+pts+' '+score+nl;
       }
     });
   }
