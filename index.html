@@ -183,6 +183,21 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
         </tr></thead>
         <tbody id="ie-serve-body"></tbody>
       </table>
+      <table class="ie-table" style="margin-top:12px;">
+        <thead><tr>
+          <th style="text-align:left;">失点</th>
+          <th>回数</th>
+          <th></th>
+        </tr></thead>
+        <tbody><tr>
+          <td>相手サーブ中</td>
+          <td><span class="ie-val neg" id="recv-loss-val">0</span></td>
+          <td>
+            <button class="ie-btn m" onclick="changeRecvLoss(-1)">−</button>
+            <button class="ie-btn p" onclick="changeRecvLoss(1)">＋</button>
+          </td>
+        </tr></tbody>
+      </table>
       <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn" onclick="resetIE()">IEリセット</button>
         <button class="btn" onclick="copyIE()">コピー</button>
@@ -240,7 +255,7 @@ const COLORS=['#185FA5','#A32D2D','#854F0B','#3B6D11','#533AB7','#993556','#0F6E
 const STORAGE_KEY='vb_kids_members_v2';
 const TEAM_KEY='vb_kids_teams';
 
-let members=[],onCourt={},ieData={};
+let members=[],onCourt={},ieData={},recvLoss=0;
 let selectedBench=null,currentTab='score';
 let ourScore=0,themScore=0,sets=[],log=[];
 let ourTeamName='自チーム',themTeamName='相手チーム';
@@ -297,9 +312,9 @@ function updateScore(){
 function updateSetInfo(){
   const ow=sets.filter(s=>s.our>s.them).length,tw=sets.filter(s=>s.them>s.our).length;
   document.getElementById('set-info').innerHTML=
-    `<span class="set-badge">第${sets.length+1}セット</span>
-     <span class="set-badge" style="background:#EBF4FD;color:#0C447C;border-color:#b3d4f5;">${ourTeamName} ${ow}勝</span>
-     <span class="set-badge" style="background:#FDEBEB;color:#7A1F1F;border-color:#f5b3b3;">${themTeamName} ${tw}勝</span>`;
+    '<span class="set-badge">第'+(sets.length+1)+'セット</span>'+
+    '<span class="set-badge" style="background:#EBF4FD;color:#0C447C;border-color:#b3d4f5;">'+ourTeamName+' '+ow+'勝</span>'+
+    '<span class="set-badge" style="background:#FDEBEB;color:#7A1F1F;border-color:#f5b3b3;">'+themTeamName+' '+tw+'勝</span>';
 }
 function updateLog(){
   const el=document.getElementById('log-area');
@@ -336,17 +351,13 @@ function buildShareText(){
   const pastSets=[...sets,r];
   const ow=pastSets.filter(s=>s.our>s.them).length;
   const tw=pastSets.filter(s=>s.them>s.our).length;
-  let text=`🏐 第${r.setNum}セット
-`;
-  text+=`${ourTeamName} ${r.our} - ${r.them} ${themTeamName}
-
-`;
+  const nl='\n';
+  let text='\uD83C\uDFD0 第'+r.setNum+'セット'+nl;
+  text+=ourTeamName+' '+r.our+' - '+r.them+' '+themTeamName+nl;
   if(sets.length>0){
-    text+=sets.map((s,i)=>`第${i+1}セット: ${s.our}-${s.them}`).join('  ')+'
-
-';
+    text+=nl+sets.map((s,i)=>'第'+(i+1)+'セット: '+s.our+'-'+s.them).join('  ')+nl;
   }
-  text+=`通算 ${ourTeamName} ${ow}勝 ／ ${themTeamName} ${tw}勝`;
+  text+=nl+'通算 '+ourTeamName+' '+ow+'勝 / '+themTeamName+' '+tw+'勝';
   return text;
 }
 
@@ -397,6 +408,13 @@ function changeIEServe(name,type,delta){
   renderIE();
 }
 
+function changeRecvLoss(delta){
+  recvLoss=Math.max(0,recvLoss+delta);
+  document.getElementById('recv-loss-val').textContent=recvLoss;
+  if(delta===1)addPoint('them',1,'相手サーブ');
+  else if(themScore>0)addPoint('them',-1);
+  renderIE();
+}
 function renderIE(){
   // セット別スコア表示
   const setScoreEl=document.getElementById('ie-set-scores');
@@ -433,14 +451,15 @@ function renderIESummary(){
   document.getElementById('ie-summary').innerHTML=`
     <div class="scard"><div class="sl">サーブ<br>決まった</div><div class="sv pos">+${tp}</div></div>
     <div class="scard"><div class="sl">相手に<br>取られた</div><div class="sv neg">-${tm}</div></div>
+    <div class="scard"><div class="sl">相手サーブ<br>中の失点</div><div class="sv neg">-${recvLoss}</div></div>
     <div class="scard"><div class="sl">チームIE</div><div class="sv ${cls}">${ti>0?'+':''}${ti}</div></div>`;
 }
-function resetIE(){members.forEach(m=>{ieData[m.name]={plus:0,minus:0};});renderIE();}
+function resetIE(){members.forEach(m=>{ieData[m.name]={plus:0,minus:0};});recvLoss=0;document.getElementById('recv-loss-val').textContent='0';renderIE();}
 function copyIE(){
   const lines=[`【サーブ IE】${ourTeamName} vs ${themTeamName}`,''];
   let tp=0,tm=0;
   members.forEach(m=>{const d=ieData[m.name]||{plus:0,minus:0},ie=d.plus-d.minus;lines.push(`${m.name}: 決+${d.plus} 取-${d.minus} IE${ie>=0?'+':''}${ie}`);tp+=d.plus;tm+=d.minus;});
-  const ti=tp-tm;lines.push('');lines.push(`チーム: +${tp} -${tm} IE${ti>=0?'+':''}${ti}`);
+  const ti=tp-tm;lines.push('');lines.push(`チーム: +${tp} -${tm} IE${ti>=0?'+':''}${ti}`);lines.push(`相手サーブ中失点: ${recvLoss}`);
   const text=lines.join('\n');
   if(navigator.share)navigator.share({title:'サーブIE',text}).catch(()=>{});
   else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('コピーしました'));
