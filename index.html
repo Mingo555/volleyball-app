@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
+<title>バレーボール 試合管理</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif; background: #f5f5f0; color: #111; }
+#app { max-width: 480px; margin: 0 auto; padding: 12px 12px 80px; display: flex; flex-direction: column; gap: 12px; }
+.panel { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.panel-title { font-size: 11px; font-weight: 600; color: #888; margin-bottom: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.btn { background: transparent; border: 1px solid #ddd; border-radius: 10px; padding: 8px 16px; font-size: 14px; cursor: pointer; color: #333; font-family: inherit; -webkit-appearance: none; }
+.btn:active { opacity: 0.7; }
+.btn-primary { background: #185FA5; border-color: #185FA5; color: white; }
+.btn-danger-soft { border-color: #ddd; color: #999; font-size: 12px; }
+
+/* member */
+.member-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.save-badge { font-size: 11px; color: #3B6D11; display: flex; align-items: center; gap: 4px; }
+.save-dot { width: 6px; height: 6px; border-radius: 50%; background: #3B6D11; }
+#member-row { display: flex; gap: 8px; }
+#member-row input { flex: 1; height: 42px; font-size: 16px; padding: 0 12px; border: 1px solid #ddd; border-radius: 10px; background: white; color: #111; font-family: inherit; -webkit-appearance: none; }
+#member-row input:focus { outline: none; border-color: #185FA5; }
+#member-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; border: 1px solid #e8e8e8; font-size: 14px; background: #f8f8f8; color: #333; user-select: none; white-space: nowrap; }
+.chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.chip-x { color: #bbb; cursor: pointer; font-size: 13px; margin-left: 2px; padding: 2px; }
+
+/* tabs */
+.tabs { display: flex; border-bottom: 1px solid #eee; margin-bottom: 16px; }
+.tab { flex: 1; padding: 10px 4px; font-size: 13px; cursor: pointer; color: #999; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; font-family: inherit; text-align: center; }
+.tab.active { color: #185FA5; border-bottom-color: #185FA5; font-weight: 600; }
+
+/* scoreboard */
+#scoreboard { display: flex; border-radius: 14px; overflow: hidden; border: 1px solid #eee; margin-bottom: 14px; }
+.score-side { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 16px 8px; gap: 12px; }
+.score-side.our  { background: #EBF4FD; }
+.score-side.them { background: #FDEBEB; }
+.score-team { font-size: 12px; font-weight: 600; color: #666; }
+.score-num { font-size: 72px; font-weight: 700; line-height: 1; min-width: 90px; text-align: center; }
+.score-num.our  { color: #0C447C; }
+.score-num.them { color: #7A1F1F; }
+.score-btns { display: flex; gap: 10px; }
+.sbtn { width: 48px; height: 48px; border-radius: 50%; border: 1px solid #ddd; background: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #333; font-family: inherit; }
+.sbtn:active { transform: scale(0.92); }
+.sbtn.plus-our  { background: #185FA5; border-color: #185FA5; color: white; }
+.sbtn.plus-them { background: #A32D2D; border-color: #A32D2D; color: white; }
+.score-divider { width: 1px; background: #eee; }
+.set-info { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+.set-badge { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: #f5f5f5; color: #666; border: 1px solid #eee; }
+.log-area { max-height: 130px; overflow-y: auto; background: #f8f8f8; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #666; line-height: 2; -webkit-overflow-scrolling: touch; }
+.log-entry { display: flex; gap: 6px; }
+.lnum { color: #bbb; min-width: 22px; }
+.log-our  { color: #185FA5; font-weight: 600; }
+.log-them { color: #A32D2D; font-weight: 600; }
+.log-src  { font-size: 11px; color: #bbb; }
+
+/* IE */
+.ie-block-title { font-size: 14px; font-weight: 600; color: #333; margin: 14px 0 4px; padding-top: 14px; border-top: 1px solid #f0f0f0; }
+.ie-block-title:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+.ie-hint { font-size: 11px; color: #aaa; margin-bottom: 10px; line-height: 1.6; }
+.ie-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ie-table th { font-size: 11px; font-weight: 600; color: #999; text-align: center; padding: 6px 2px; border-bottom: 1px solid #f0f0f0; }
+.ie-table th:first-child { text-align: left; }
+.ie-table td { padding: 10px 2px; text-align: center; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+.ie-table td:first-child { text-align: left; font-size: 13px; }
+.ie-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #ddd; background: white; font-size: 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #555; font-family: inherit; }
+.ie-btn:active { transform: scale(0.9); }
+.ie-btn.p { background: #EAF3DE; border-color: #aad47a; color: #3B6D11; }
+.ie-btn.m { background: #f8f8f8; }
+.ie-val { display: inline-block; min-width: 28px; text-align: center; font-weight: 700; font-size: 16px; }
+.pos { color: #3B6D11; } .neg { color: #A32D2D; } .zero { color: #bbb; }
+.summary-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.scard { flex: 1 1 60px; background: #f8f8f8; border-radius: 12px; padding: 10px 8px; text-align: center; }
+.scard .sl { font-size: 10px; color: #999; margin-bottom: 4px; line-height: 1.4; }
+.scard .sv { font-size: 22px; font-weight: 700; }
+
+/* court */
+#court { border-radius: 12px; display: block; touch-action: none; }
+#court-area { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+.bench-box { background: #f8f8f8; border: 2px dashed #ddd; border-radius: 12px; min-height: 56px; padding: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+
+/* bottom safe area */
+.safe-bottom { height: env(safe-area-inset-bottom, 20px); }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- メンバー -->
+  <div class="panel">
+    <div class="member-header">
+      <span class="panel-title" style="margin-bottom:0;">メンバー登録</span>
+      <span class="save-badge" id="save-badge"><span class="save-dot"></span>自動保存</span>
+    </div>
+    <div id="member-row">
+      <input id="name-input" type="text" placeholder="選手名（例：たなか）" maxlength="6" />
+      <button class="btn btn-primary" onclick="addMember()">追加</button>
+    </div>
+    <div id="member-list"></div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-danger-soft" onclick="clearAllMembers()">メンバーを全削除</button>
+    </div>
+  </div>
+
+  <!-- メインパネル -->
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('score',this)">スコア</button>
+      <button class="tab" onclick="showTab('ie',this)">サーブ IE</button>
+      <button class="tab" onclick="showTab('formation',this)">配置</button>
+    </div>
+
+    <!-- スコア -->
+    <div id="score-section">
+      <div class="set-info" id="set-info"></div>
+      <div id="scoreboard">
+        <div class="score-side our">
+          <div class="score-team">自チーム</div>
+          <div class="score-num our" id="our-score">0</div>
+          <div class="score-btns">
+            <button class="sbtn" onclick="addPoint('our',-1)">↩</button>
+            <button class="sbtn plus-our" onclick="addPoint('our',1)">＋</button>
+          </div>
+        </div>
+        <div class="score-divider"></div>
+        <div class="score-side them">
+          <div class="score-team">相手</div>
+          <div class="score-num them" id="them-score">0</div>
+          <div class="score-btns">
+            <button class="sbtn" onclick="addPoint('them',-1)">↩</button>
+            <button class="sbtn plus-them" onclick="addPoint('them',1)">＋</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="btn" onclick="nextSet()">セット終了 → 次へ</button>
+        <button class="btn" onclick="resetAll()">全リセット</button>
+      </div>
+      <div class="panel-title">得点ログ</div>
+      <div class="log-area" id="log-area"><span style="color:#bbb">まだ得点がありません</span></div>
+    </div>
+
+    <!-- IE -->
+    <div id="ie-section" style="display:none;">
+      <div class="summary-row" id="ie-summary"></div>
+      <div class="ie-block-title">自チームのサーブ（選手ごと）</div>
+      <div class="ie-hint">「決まった」→ 自チーム+1点 ／ 「取られた」→ 相手+1点 が自動加算</div>
+      <table class="ie-table">
+        <thead>
+          <tr>
+            <th>選手</th>
+            <th>決まった<br><span style="color:#3B6D11;font-size:10px;">自+1</span></th>
+            <th>取られた<br><span style="color:#A32D2D;font-size:10px;">相手+1</span></th>
+            <th>IE</th>
+          </tr>
+        </thead>
+        <tbody id="ie-serve-body"></tbody>
+      </table>
+      <div class="ie-block-title">相手サーブからの失点</div>
+      <div class="ie-hint">相手サーブで自チームが失点 → 相手+1点 が自動加算</div>
+      <table class="ie-table">
+        <thead><tr><th style="text-align:left;">項目</th><th>回数</th><th></th></tr></thead>
+        <tbody>
+          <tr>
+            <td>相手サーブ失点</td>
+            <td><span class="ie-val neg" id="recv-loss-val">0</span></td>
+            <td>
+              <button class="ie-btn m" onclick="changeRecvLoss(-1)">−</button>
+              <button class="ie-btn p" onclick="changeRecvLoss(1)">＋</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" onclick="resetIE()">IEリセット</button>
+        <button class="btn" onclick="copyIE()">コピー</button>
+      </div>
+    </div>
+
+    <!-- フォーメーション -->
+    <div id="formation-section" style="display:none;">
+      <div id="court-area">
+        <div style="flex-shrink:0;"><canvas id="court" width="260" height="380"></canvas></div>
+        <div style="flex:1 1 120px;display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div class="panel-title" style="margin-bottom:6px;">控え</div>
+            <div class="bench-box" id="bench"></div>
+          </div>
+          <div style="font-size:12px;color:#999;line-height:2.2;">
+            <div>S — セッター</div>
+            <div>OH — アウトサイドHT</div>
+            <div>MB — ミドルBK</div>
+            <div>OP — オポジット</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:#bbb;">タップでコートへ配置 / もう一度タップで控えに戻す</div>
+    </div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<script>
+const CW=260,CH=380;
+const canvas=document.getElementById('court');
+const ctx=canvas.getContext('2d');
+const POSITIONS=[
+  {id:0,label:'OH',x:0.18,y:0.77},{id:1,label:'MB',x:0.50,y:0.77},{id:2,label:'OP',x:0.82,y:0.77},
+  {id:3,label:'OH',x:0.18,y:0.57},{id:4,label:'S',x:0.50,y:0.57},{id:5,label:'MB',x:0.82,y:0.57},
+];
+const COLORS=['#185FA5','#A32D2D','#854F0B','#3B6D11','#533AB7','#993556','#0F6E56','#3a5f8a'];
+const STORAGE_KEY='vb_kids_members_v2';
+
+let members=[],onCourt={},ieData={},recvLoss=0;
+let selectedBench=null,currentTab='score';
+let ourScore=0,themScore=0,sets=[],log=[];
+
+// ---- STORAGE ----
+function saveMembers(){
+  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(members)); flashSave(); }catch(e){}
+}
+function loadMembers(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){ JSON.parse(raw).forEach(m=>{members.push(m);if(!ieData[m.name])ieData[m.name]={plus:0,minus:0};});
+      renderMemberList();members.forEach(m=>addToBench(m.name)); }
+  }catch(e){}
+}
+function flashSave(){const b=document.getElementById('save-badge');b.style.color='#3B6D11';setTimeout(()=>b.style.color='',1000);}
+function clearAllMembers(){
+  if(!confirm('メンバーを全削除しますか？'))return;
+  members=[];onCourt={};ieData={};
+  document.getElementById('bench').innerHTML='';
+  renderMemberList();drawCourt();saveMembers();
+  if(currentTab==='ie')renderIE();
+}
+
+// ---- TABS ----
+function showTab(tab,el){
+  currentTab=tab;
+  ['score','ie','formation'].forEach(t=>{document.getElementById(t+'-section').style.display=t===tab?'':'none';});
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if(tab==='ie')renderIE();
+  if(tab==='formation')drawCourt();
+}
+
+// ---- SCORE ----
+function addPoint(side,delta,src){
+  if(side==='our')ourScore=Math.max(0,ourScore+delta);
+  else themScore=Math.max(0,themScore+delta);
+  if(delta===1)log.unshift({side,our:ourScore,them:themScore,set:sets.length+1,src:src||''});
+  else if(log.length)log.shift();
+  updateScore();
+}
+function updateScore(){
+  document.getElementById('our-score').textContent=ourScore;
+  document.getElementById('them-score').textContent=themScore;
+  updateSetInfo();updateLog();
+}
+function updateSetInfo(){
+  const ow=sets.filter(s=>s.our>s.them).length,tw=sets.filter(s=>s.them>s.our).length;
+  document.getElementById('set-info').innerHTML=
+    `<span class="set-badge">第${sets.length+1}セット</span>
+     <span class="set-badge" style="background:#EBF4FD;color:#0C447C;border-color:#b3d4f5;">自 ${ow}セット</span>
+     <span class="set-badge" style="background:#FDEBEB;color:#7A1F1F;border-color:#f5b3b3;">相手 ${tw}セット</span>`;
+}
+function updateLog(){
+  const el=document.getElementById('log-area');
+  if(!log.length){el.innerHTML='<span style="color:#bbb">まだ得点がありません</span>';return;}
+  el.innerHTML=log.slice(0,40).map((e,i)=>{
+    const label=e.side==='our'?`<span class="log-our">自チーム</span>`:`<span class="log-them">相手チーム</span>`;
+    const s=e.src?`<span class="log-src">[${e.src}]</span>`:'';
+    return `<div class="log-entry"><span class="lnum">${log.length-i}.</span>${label}${s} <b>${e.our}－${e.them}</b></div>`;
+  }).join('');
+}
+function nextSet(){sets.push({our:ourScore,them:themScore});ourScore=0;themScore=0;log=[];updateScore();alert(`セット${sets.length}終了！次のセットへ`);}
+function resetAll(){if(confirm('全リセットしますか？')){ourScore=0;themScore=0;sets=[];log=[];updateScore();}}
+
+// ---- IE ----
+function changeIEServe(name,type,delta){
+  if(!ieData[name])ieData[name]={plus:0,minus:0};
+  ieData[name][type]=Math.max(0,ieData[name][type]+delta);
+  if(delta===1){
+    if(type==='plus')addPoint('our',1,`${name}サーブ`);
+    if(type==='minus')addPoint('them',1,`${name}→相手`);
+  } else {
+    if(type==='plus'&&ourScore>0)addPoint('our',-1);
+    if(type==='minus'&&themScore>0)addPoint('them',-1);
+  }
+  renderIE();
+}
+function changeRecvLoss(delta){
+  recvLoss=Math.max(0,recvLoss+delta);
+  document.getElementById('recv-loss-val').textContent=recvLoss;
+  if(delta===1)addPoint('them',1,'相手サーブ');
+  else if(themScore>0)addPoint('them',-1);
+  renderIE();
+}
+function renderIE(){
+  const body=document.getElementById('ie-serve-body');
+  if(!members.length){body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:16px;color:#bbb;">先にメンバーを登録してください</td></tr>';renderIESummary();return;}
+  body.innerHTML='';
+  members.forEach(m=>{
+    const d=ieData[m.name]||{plus:0,minus:0},ie=d.plus-d.minus,cls=ie>0?'pos':ie<0?'neg':'zero';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><span class="chip-dot" style="background:${m.color};display:inline-block;vertical-align:middle;margin-right:5px;"></span>${m.name}</td>
+      <td><button class="ie-btn m" onclick="changeIEServe('${m.name}','plus',-1)">−</button><span class="ie-val">${d.plus}</span><button class="ie-btn p" onclick="changeIEServe('${m.name}','plus',1)">＋</button></td>
+      <td><button class="ie-btn m" onclick="changeIEServe('${m.name}','minus',-1)">−</button><span class="ie-val">${d.minus}</span><button class="ie-btn p" onclick="changeIEServe('${m.name}','minus',1)">＋</button></td>
+      <td style="font-size:16px;font-weight:700;" class="${cls}">${ie>0?'+':''}${ie}</td>`;
+    body.appendChild(tr);
+  });
+  renderIESummary();
+}
+function renderIESummary(){
+  let tp=0,tm=0;
+  members.forEach(m=>{const d=ieData[m.name]||{plus:0,minus:0};tp+=d.plus;tm+=d.minus;});
+  const ti=tp-tm,cls=ti>0?'pos':ti<0?'neg':'zero';
+  document.getElementById('ie-summary').innerHTML=`
+    <div class="scard"><div class="sl">サーブ<br>決まった</div><div class="sv pos">+${tp}</div></div>
+    <div class="scard"><div class="sl">相手に<br>取られた</div><div class="sv neg">-${tm}</div></div>
+    <div class="scard"><div class="sl">相手サーブ<br>失点</div><div class="sv neg">-${recvLoss}</div></div>
+    <div class="scard"><div class="sl">チーム<br>IE</div><div class="sv ${cls}">${ti>0?'+':''}${ti}</div></div>`;
+}
+function resetIE(){members.forEach(m=>{ieData[m.name]={plus:0,minus:0};});recvLoss=0;document.getElementById('recv-loss-val').textContent='0';renderIE();}
+function copyIE(){
+  const lines=['【サーブ IE】',''];
+  let tp=0,tm=0;
+  members.forEach(m=>{const d=ieData[m.name]||{plus:0,minus:0},ie=d.plus-d.minus;lines.push(`${m.name}: 決+${d.plus} 取-${d.minus} IE${ie>=0?'+':''}${ie}`);tp+=d.plus;tm+=d.minus;});
+  const ti=tp-tm;lines.push('');lines.push(`チーム: +${tp} -${tm} IE${ti>=0?'+':''}${ti}`);lines.push(`相手サーブ失点: ${recvLoss}`);
+  if(navigator.share){navigator.share({title:'サーブIE',text:lines.join('\n')}).catch(()=>{});}
+  else if(navigator.clipboard){navigator.clipboard.writeText(lines.join('\n')).then(()=>alert('コピーしました'));}
+}
+
+// ---- MEMBERS ----
+function addMember(){
+  const inp=document.getElementById('name-input'),name=inp.value.trim();
+  if(!name)return;
+  if(members.find(m=>m.name===name)){alert('同じ名前がいます');return;}
+  const color=COLORS[members.length%COLORS.length];
+  members.push({name,color});
+  if(!ieData[name])ieData[name]={plus:0,minus:0};
+  inp.value='';inp.blur();
+  renderMemberList();addToBench(name);saveMembers();
+  if(currentTab==='ie')renderIE();
+}
+function removeMember(name){
+  members=members.filter(m=>m.name!==name);
+  Object.keys(onCourt).forEach(k=>{if(onCourt[k].name===name)delete onCourt[k];});
+  delete ieData[name];
+  removeBenchChip(name);renderMemberList();drawCourt();saveMembers();
+  if(currentTab==='ie')renderIE();
+}
+function renderMemberList(){
+  const list=document.getElementById('member-list');list.innerHTML='';
+  members.forEach(m=>{
+    const c=document.createElement('div');c.className='chip';
+    c.innerHTML=`<span class="chip-dot" style="background:${m.color}"></span>${m.name}<span class="chip-x" onclick="removeMember('${m.name}')">✕</span>`;
+    list.appendChild(c);
+  });
+}
+document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter'){addMember();}});
+
+// ---- COURT (タッチ対応) ----
+function drawCourt(){
+  ctx.clearRect(0,0,CW,CH);
+  ctx.fillStyle='#2d7a3a';rr(ctx,0,0,CW,CH,12);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.18)';ctx.fillRect(12,12,CW-24,CH*0.5-12);
+  ctx.strokeStyle='rgba(255,255,255,0.75)';ctx.lineWidth=1.5;ctx.strokeRect(12,12,CW-24,CH-24);
+  ctx.lineWidth=4;ctx.strokeStyle='rgba(255,255,255,0.92)';
+  ctx.beginPath();ctx.moveTo(12,CH*0.5);ctx.lineTo(CW-12,CH*0.5);ctx.stroke();
+  ctx.lineWidth=1.5;ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(12,CH*0.68);ctx.lineTo(CW-12,CH*0.68);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
+  ctx.fillText('相手コート',CW/2,CH*0.27);ctx.fillText('自チーム',CW/2,CH*0.91);
+  POSITIONS.forEach(p=>{
+    const x=p.x*CW,y=p.y*CH,pl=onCourt[p.id];
+    ctx.beginPath();ctx.arc(x,y,28,0,Math.PI*2);
+    ctx.fillStyle=pl?pl.color:'rgba(0,0,0,0.28)';ctx.fill();
+    ctx.strokeStyle=pl?'white':'rgba(255,255,255,0.4)';ctx.lineWidth=pl?2.5:1.5;ctx.stroke();
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    if(pl){
+      ctx.fillStyle='white';ctx.font='bold 12px sans-serif';ctx.fillText(pl.name.slice(0,5),x,y-5);
+      ctx.font='10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.75)';ctx.fillText(p.label,x,y+10);
+    } else {
+      ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font='bold 14px sans-serif';ctx.fillText(p.label,x,y-3);
+      ctx.font='10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.45)';ctx.fillText('空き',x,y+10);
+    }
+    ctx.textBaseline='alphabetic';
+  });
+}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.closePath();}
+function posAt(cx,cy){
+  for(const p of POSITIONS){const x=p.x*CW,y=p.y*CH;if(Math.hypot(cx-x,cy-y)<34)return p.id;}
+  return -1;
+}
+
+// タッチ & クリック両対応
+function handleCourtTap(cx,cy){
+  const idx=posAt(cx,cy);if(idx<0)return;
+  if(onCourt[idx]){addToBench(onCourt[idx].name);delete onCourt[idx];drawCourt();}
+  else if(selectedBench){
+    const m=members.find(m=>m.name===selectedBench);
+    if(m){onCourt[idx]={name:m.name,color:m.color};selectedBench=null;clearBenchSelection();drawCourt();}
+  }
+}
+canvas.addEventListener('click',e=>{
+  const r=canvas.getBoundingClientRect();
+  handleCourtTap((e.clientX-r.left)*(CW/r.width),(e.clientY-r.top)*(CH/r.height));
+});
+canvas.addEventListener('touchend',e=>{
+  e.preventDefault();
+  const r=canvas.getBoundingClientRect(),t=e.changedTouches[0];
+  handleCourtTap((t.clientX-r.left)*(CW/r.width),(t.clientY-r.top)*(CH/r.height));
+},{passive:false});
+
+function clearBenchSelection(){document.getElementById('bench').querySelectorAll('.chip').forEach(c=>c.style.outline='');selectedBench=null;}
+function addToBench(name){if(!document.getElementById('bench').querySelector(`[data-name="${name}"]`))renderBenchChip(name);}
+function removeBenchChip(name){const c=document.getElementById('bench').querySelector(`[data-name="${name}"]`);if(c)c.remove();}
+function renderBenchChip(name){
+  const m=members.find(m=>m.name===name);if(!m)return;
+  const chip=document.createElement('div');chip.className='chip';chip.dataset.name=name;chip.style.cursor='pointer';
+  chip.innerHTML=`<span class="chip-dot" style="background:${m.color}"></span>${name}`;
+  chip.addEventListener('click',()=>{
+    if(selectedBench===name){clearBenchSelection();}
+    else{clearBenchSelection();selectedBench=name;chip.style.outline='2px solid #185FA5';}
+  });
+  document.getElementById('bench').appendChild(chip);
+}
+
+updateScore();
+loadMembers();
+drawCourt();
+</script>
+</body>
+</html>
