@@ -194,15 +194,26 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
         </tr></thead>
         <tbody id="ie-serve-body"></tbody>
       </table>
-      <div class="ie-block-title" style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f0;">サーブカット（受け取り）</div>
-      <div class="ie-hint">相手のサーブをカットできた回数を記録</div>
+      <div class="ie-block-title" style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f0;">相手サーブ中</div>
+      <div class="ie-hint">相手のサーブ中の得点・失点を記録</div>
       <table class="ie-table">
         <thead><tr>
-          <th>選手</th>
-          <th>カット成功<br><span style="color:#3B6D11;font-size:10px;">自+1</span></th>
-          <th>カット失敗<br><span style="color:#A32D2D;font-size:10px;">相手+1</span></th>
+          <th style="text-align:left;">項目</th>
+          <th>回数</th>
+          <th></th>
         </tr></thead>
-        <tbody id="ie-recv-body"></tbody>
+        <tbody>
+          <tr>
+            <td>得点<span style="font-size:10px;color:#3B6D11;margin-left:4px;">自+1</span></td>
+            <td><span class="ie-val pos" id="recv-ok-val">0</span></td>
+            <td id="recv-ok-btns"></td>
+          </tr>
+          <tr>
+            <td>失点<span style="font-size:10px;color:#A32D2D;margin-left:4px;">相手+1</span></td>
+            <td><span class="ie-val neg" id="recv-loss-val">0</span></td>
+            <td id="recv-loss-btns"></td>
+          </tr>
+        </tbody>
       </table>
       <table class="ie-table" style="margin-top:12px;">
         <thead><tr>
@@ -280,7 +291,7 @@ const COLORS=['#185FA5','#A32D2D','#854F0B','#3B6D11','#533AB7','#993556','#0F6E
 const STORAGE_KEY='vb_kids_members_v2';
 const TEAM_KEY='vb_kids_teams';
 
-let members=[],onCourt={},ieData={},recvLoss=0;
+let members=[],onCourt={},ieData={},recvLoss=0,recvOk=0;
 let selectedBench=null,currentTab='score';
 let ourScore=0,themScore=0,sets=[],log=[];
 let ourTeamName='自チーム',themTeamName='相手チーム';
@@ -438,26 +449,21 @@ function changeIEServe(name,type,delta){
   renderIE();
 }
 
-function changeRecv(name,type,delta){
-  if(!ieData[name])ieData[name]={plus:0,minus:0,recvOk:0,recvNg:0};
-  ieData[name][type]=Math.max(0,ieData[name][type]+delta);
-  if(type==='recvOk'){
-    if(delta===1)addPoint('our',1,name+'カット成功');
-    else if(ourScore>0)addPoint('our',-1);
-  }
-  if(type==='recvNg'){
-    if(delta===1)addPoint('them',1,name+'カット失敗');
-    else if(themScore>0)addPoint('them',-1);
-  }
-  renderIE();
+function changeRecvOk(delta){
+  recvOk=Math.max(0,recvOk+delta);
+  document.getElementById('recv-ok-val').textContent=recvOk;
+  if(delta===1)addPoint('our',1,'相手サーブ中得点');
+  else if(ourScore>0)addPoint('our',-1);
+  renderIESummary();
 }
-function changeRecvLoss(delta){
+function changeRecvLoss2(delta){
   recvLoss=Math.max(0,recvLoss+delta);
   document.getElementById('recv-loss-val').textContent=recvLoss;
-  if(delta===1)addPoint('them',1,'相手サーブ');
+  if(delta===1)addPoint('them',1,'相手サーブ中失点');
   else if(themScore>0)addPoint('them',-1);
-  renderIE();
+  renderIESummary();
 }
+
 function renderIE(){
   // 現在スコア
   document.getElementById('ie-our-name').textContent=ourTeamName;
@@ -501,43 +507,38 @@ function renderIE(){
     cells[2].appendChild(b2m);cells[2].appendChild(v2);cells[2].appendChild(b2p);
     body.appendChild(tr);
   });
-  // サーブカット
-  const rbody=document.getElementById('ie-recv-body');
-  rbody.innerHTML='';
-  members.forEach(m=>{
-    const d=ieData[m.name]||{plus:0,minus:0,recvOk:0,recvNg:0};
-    const tr=document.createElement('tr');
-    const r1m=document.createElement('button');r1m.className='ie-btn m';r1m.textContent='−';r1m.onclick=()=>changeRecv(m.name,'recvOk',-1);
-    const r1p=document.createElement('button');r1p.className='ie-btn p';r1p.textContent='＋';r1p.onclick=()=>changeRecv(m.name,'recvOk',1);
-    const r2m=document.createElement('button');r2m.className='ie-btn m';r2m.textContent='−';r2m.onclick=()=>changeRecv(m.name,'recvNg',-1);
-    const r2p=document.createElement('button');r2p.className='ie-btn p';r2p.textContent='＋';r2p.onclick=()=>changeRecv(m.name,'recvNg',1);
-    const dot='<span class="chip-dot" style="background:'+m.color+';display:inline-block;vertical-align:middle;margin-right:5px;"></span>';
-    tr.innerHTML='<td>'+dot+m.name+'</td><td></td><td></td>';
-    const rcells=tr.querySelectorAll('td');
-    const rv1=document.createElement('span');rv1.className='ie-val';rv1.textContent=d.recvOk;
-    rcells[1].appendChild(r1m);rcells[1].appendChild(rv1);rcells[1].appendChild(r1p);
-    const rv2=document.createElement('span');rv2.className='ie-val neg';rv2.textContent=d.recvNg;
-    rcells[2].appendChild(r2m);rcells[2].appendChild(rv2);rcells[2].appendChild(r2p);
-    rbody.appendChild(tr);
-  });
+  // 相手サーブ中ボタン組み立て
+  const okBtns=document.getElementById('recv-ok-btns');
+  const lsBtns=document.getElementById('recv-loss-btns');
+  if(okBtns&&!okBtns.hasChildNodes()){
+    const bm=document.createElement('button');bm.className='ie-btn m';bm.textContent='−';bm.onclick=()=>changeRecvOk(-1);
+    const bp=document.createElement('button');bp.className='ie-btn p';bp.textContent='＋';bp.onclick=()=>changeRecvOk(1);
+    okBtns.appendChild(bm);okBtns.appendChild(bp);
+  }
+  if(lsBtns&&!lsBtns.hasChildNodes()){
+    const bm=document.createElement('button');bm.className='ie-btn m';bm.textContent='−';bm.onclick=()=>changeRecvLoss2(-1);
+    const bp=document.createElement('button');bp.className='ie-btn p';bp.textContent='＋';bp.onclick=()=>changeRecvLoss2(1);
+    lsBtns.appendChild(bm);lsBtns.appendChild(bp);
+  }
   renderIESummary();
 }
 function renderIESummary(){
   let tp=0,tm=0;
   members.forEach(m=>{const d=ieData[m.name]||{plus:0,minus:0};tp+=d.plus;tm+=d.minus;});
   const ti=tp-tm,cls=ti>0?'pos':ti<0?'neg':'zero';
-  document.getElementById('ie-summary').innerHTML=`
-    <div class="scard"><div class="sl">サーブ<br>決まった</div><div class="sv pos">+${tp}</div></div>
-    <div class="scard"><div class="sl">相手に<br>取られた</div><div class="sv neg">-${tm}</div></div>
-    <div class="scard"><div class="sl">相手サーブ<br>中の失点</div><div class="sv neg">-${recvLoss}</div></div>
-    <div class="scard"><div class="sl">チームIE</div><div class="sv ${cls}">${ti>0?'+':''}${ti}</div></div>`;
+  document.getElementById('ie-summary').innerHTML=
+    '<div class="scard"><div class="sl">サーブ<br>決まった</div><div class="sv pos">+'+tp+'</div></div>'+
+    '<div class="scard"><div class="sl">相手に<br>取られた</div><div class="sv neg">-'+tm+'</div></div>'+
+    '<div class="scard"><div class="sl">相手サーブ<br>得点</div><div class="sv pos">+'+recvOk+'</div></div>'+
+    '<div class="scard"><div class="sl">相手サーブ<br>失点</div><div class="sv neg">-'+recvLoss+'</div></div>'+
+    '<div class="scard"><div class="sl">チームIE</div><div class="sv '+cls+'">'+(ti>0?'+':'')+ti+'</div></div>';
 }
-function resetIE(){members.forEach(m=>{ieData[m.name]={plus:0,minus:0,recvOk:0,recvNg:0};});recvLoss=0;document.getElementById('recv-loss-val').textContent='0';renderIE();}
+function resetIE(){members.forEach(m=>{ieData[m.name]={plus:0,minus:0};});recvLoss=0;recvOk=0;const ov=document.getElementById('recv-ok-val');if(ov)ov.textContent='0';document.getElementById('recv-loss-val').textContent='0';renderIE();}
 function copyIE(){
   const lines=[`【サーブ IE】${ourTeamName} vs ${themTeamName}`,''];
   let tp=0,tm=0;
   members.forEach(m=>{const d=ieData[m.name]||{plus:0,minus:0},ie=d.plus-d.minus;lines.push(`${m.name}: 決+${d.plus} 取-${d.minus} IE${ie>=0?'+':''}${ie}`);tp+=d.plus;tm+=d.minus;});
-  const ti=tp-tm;lines.push('');lines.push(`チーム: +${tp} -${tm} IE${ti>=0?'+':''}${ti}`);lines.push(`相手サーブ中失点: ${recvLoss}`);
+  const ti=tp-tm;lines.push('');lines.push(`チーム: +${tp} -${tm} IE${ti>=0?'+':''}${ti}`);lines.push('相手サーブ中: 得点 +'+recvOk+'  失点 -'+recvLoss);
   const text=lines.join('\n');
   if(navigator.share)navigator.share({title:'サーブIE',text}).catch(()=>{});
   else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('コピーしました'));
