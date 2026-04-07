@@ -369,9 +369,9 @@ function endSet(){
   const pastSets=[...sets,{our:ourScore,them:themScore}];
   const ow=pastSets.filter(s=>s.our>s.them).length;
   const tw=pastSets.filter(s=>s.them>s.our).length;
-  let summary=`通算 ${ourTeamName} ${ow}勝 ／ ${themTeamName} ${tw}勝`;
+  let summary='';
   if(sets.length>0){
-    summary+='<br>'+sets.map((s,i)=>`第${i+1}セット: ${s.our}－${s.them}`).join('　');
+    summary=sets.map((s,i)=>'第'+(i+1)+'セット: '+s.our+'－'+s.them).join('　');
   }
   document.getElementById('modal-sets-summary').innerHTML=summary;
   document.getElementById('modal').style.display='flex';
@@ -379,16 +379,44 @@ function endSet(){
 
 function buildShareText(){
   const r=pendingSetResult;
-  const pastSets=[...sets,r];
-  const ow=pastSets.filter(s=>s.our>s.them).length;
-  const tw=pastSets.filter(s=>s.them>s.our).length;
   const nl='\n';
   let text='\uD83C\uDFD0 第'+r.setNum+'セット'+nl;
   text+=ourTeamName+' '+r.our+' - '+r.them+' '+themTeamName+nl;
-  if(sets.length>0){
-    text+=nl+sets.map((s,i)=>'第'+(i+1)+'セット: '+s.our+'-'+s.them).join('  ')+nl;
+
+  // 得点ログを連続するチームごとにまとめる（logは新しい順なので逆順にしてから処理）
+  const chronolog=[...log].reverse(); // 古い順
+  if(chronolog.length>0){
+    text+=nl+'【得点経過】'+nl;
+    // ランレングス圧縮
+    const runs=[];
+    chronolog.forEach(e=>{
+      if(runs.length>0&&runs[runs.length-1].side===e.side){
+        runs[runs.length-1].count++;
+      } else {
+        runs.push({side:e.side,count:1,score:{our:e.our,them:e.them}});
+      }
+    });
+    // 最初のスコアを0-0から始める
+    let prevOur=0,prevThem=0;
+    runs.forEach(run=>{
+      const name=run.side==='our'?ourTeamName:themTeamName;
+      const sign=run.side==='our'?'+':'-';
+      const endOur=run.score.our,endThem=run.score.them;
+      const scoreStr=endOur+'－'+endThem;
+      if(run.count===1){
+        text+=name+' 得点 ('+scoreStr+')'+nl;
+      } else {
+        text+=name+' +'+run.count+'点連続 ('+scoreStr+')'+nl;
+      }
+      prevOur=endOur;prevThem=endThem;
+    });
   }
-  text+=nl+'通算 '+ourTeamName+' '+ow+'勝 / '+themTeamName+' '+tw+'勝';
+
+  // 過去セット
+  if(sets.length>0){
+    text+=nl+'【過去セット】'+nl;
+    text+=sets.map((s,i)=>'第'+(i+1)+'セット: '+s.our+'-'+s.them).join(nl)+nl;
+  }
   return text;
 }
 
