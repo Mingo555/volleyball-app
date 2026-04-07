@@ -395,18 +395,25 @@ function buildShareText(){
         last.count++;
         last.endOur=e.our;
         last.endThem=e.them;
+        // 連続中に選手が変わったらチーム名に切り替え
+        if(last.src&&last.src!==e.src) last.src=null;
       } else {
-        runs.push({side:e.side,count:1,endOur:e.our,endThem:e.them});
+        runs.push({side:e.side,count:1,endOur:e.our,endThem:e.them,src:e.src||null});
       }
     });
     // 古い順に出力
     runs.forEach(run=>{
-      const name=run.side==='our'?ourTeamName:themTeamName;
+      const teamName=run.side==='our'?ourTeamName:themTeamName;
       const score='('+run.endOur+'-'+run.endThem+')';
       if(run.count===1){
-        text+=name+' 得点 '+score+nl;
+        // 1点なら選手名があれば使う
+        const who=run.src?run.src:teamName;
+        text+=who+' 得点 '+score+nl;
+      } else if(run.src){
+        // 連続で選手名が同じなら選手名表示
+        text+=run.src+' +'+run.count+'点連続 '+score+nl;
       } else {
-        text+=name+' +'+run.count+'点連続 '+score+nl;
+        text+=teamName+' +'+run.count+'点連続 '+score+nl;
       }
     });
   }
