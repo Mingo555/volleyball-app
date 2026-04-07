@@ -205,12 +205,12 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
           </tr></thead>
           <tbody>
             <tr>
-              <td>得点 <span style="font-size:10px;color:#3B6D11;">自+1・権戻る</span></td>
+              <td>カット成功 <span style="font-size:10px;color:#3B6D11;">自+1・権戻る</span></td>
               <td><span class="ie-val pos" id="recv-ok-val">0</span></td>
               <td id="recv-ok-btns"></td>
             </tr>
             <tr>
-              <td>失点 <span style="font-size:10px;color:#A32D2D;">相手+1</span></td>
+              <td>カット失敗 <span style="font-size:10px;color:#A32D2D;">相手+1</span></td>
               <td><span class="ie-val neg" id="recv-loss-val">0</span></td>
               <td id="recv-loss-btns"></td>
             </tr>
@@ -391,7 +391,7 @@ function buildShareText(){
     // カテゴリ: 'player'=個人サーブ得点, 'them'=相手チーム得点(自サーブ失点含む), 'recvOur'=相手サーブ中自得点, 'recvThem'=相手サーブ中失点
     const entries=chronolog.map(e=>{
       // 自チームサーブで決まった → 個人
-      if(e.side==='our'&&e.src&&e.src.indexOf('→相手')===-1&&e.src.indexOf('サーブ中')===-1){
+      if(e.side==='our'&&e.src&&e.src.indexOf('→相手')===-1&&e.src.indexOf('カット')===-1){
         const playerName=e.src.replace('サーブ','');
         return {cat:'player',name:playerName,our:e.our,them:e.them};
       }
@@ -401,7 +401,7 @@ function buildShareText(){
       }
       // 相手サーブ中自チーム得点
       if(e.side==='our'){
-        return {cat:'recvOur',name:ourTeamName,our:e.our,them:e.them};
+        return {cat:'recvOur',name:ourTeamName,our:e.our,them:e.them}; // カット成功
       }
       return {cat:'them',name:themTeamName,our:e.our,them:e.them};
     });
@@ -417,19 +417,25 @@ function buildShareText(){
       }
     });
 
-    // 出力
+    // 出力: シンプルに名前＋点数＋スコア
+    // recvOurは直前のthemとまとめる（サーブ権移動は表示しない）
+    const merged=[];
     runs.forEach(run=>{
-      const score='('+run.our+'-'+run.them+')';
+      const last=merged[merged.length-1];
+      if(run.cat==='recvOur'&&last&&last.cat==='them'){
+        // 相手得点の後のカット成功はまとめてスコアだけ更新
+        last.our=run.our;last.them=run.them;
+      } else {
+        merged.push(Object.assign({},run));
+      }
+    });
+    merged.forEach(run=>{
       if(run.cat==='player'){
+        const score='('+run.our+'-'+run.them+')';
         const balls='\uD83C\uDFD0'.repeat(run.count);
         text+=run.name+' '+balls+' '+score+nl;
-      } else if(run.cat==='recvOur'){
-        const pts=run.count===1?'サーブ権取得':'サーブ権取得 +'+run.count+'点';
-        text+=run.name+' '+pts+' '+score+nl;
-      } else {
-        const pts=run.count===1?'得点':'+'+run.count+'点';
-        text+=run.name+' '+pts+' '+score+nl;
       }
+      // 個人名なしは省略
     });
   }
 
@@ -523,14 +529,14 @@ function changeIEServe(name,type,delta){
 function changeRecvOk(delta){
   recvOk=Math.max(0,recvOk+delta);
   document.getElementById('recv-ok-val').textContent=recvOk;
-  if(delta===1){addPoint('our',1,'相手サーブ→得点');updateServeMode('our');}
+  if(delta===1){addPoint('our',1,'相手サーブ→カット成功');updateServeMode('our');}
   else if(ourScore>0){addPoint('our',-1);updateServeMode('them');}
   renderIESummary();
 }
 function changeRecvLoss2(delta){
   recvLoss=Math.max(0,recvLoss+delta);
   document.getElementById('recv-loss-val').textContent=recvLoss;
-  if(delta===1)addPoint('them',1,'相手サーブ中失点');
+  if(delta===1)addPoint('them',1,'相手サーブ→カット失敗');
   else if(themScore>0)addPoint('them',-1);
   renderIESummary();
 }
