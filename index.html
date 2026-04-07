@@ -171,9 +171,9 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
     </div>
 
     <div id="ie-section" style="display:none;">
+      <div id="ie-set-scores" style="display:none;background:#f8f8f8;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px;"></div>
       <div class="summary-row" id="ie-summary"></div>
-      <div class="ie-block-title">自チームのサーブ（選手ごと）</div>
-      <div class="ie-hint">「決まった」→ 自チーム+1点 ／ 「取られた」→ 相手+1点 が自動加算</div>
+      <div class="ie-hint" style="margin-bottom:8px;">「決まった」→ 自チーム+1点 ／ 「取られた」→ 相手+1点 が自動加算</div>
       <table class="ie-table">
         <thead><tr>
           <th>選手</th>
@@ -182,19 +182,6 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
           <th>IE</th>
         </tr></thead>
         <tbody id="ie-serve-body"></tbody>
-      </table>
-      <div class="ie-block-title">相手サーブからの失点</div>
-      <div class="ie-hint">相手サーブで自チームが失点 → 相手+1点 が自動加算</div>
-      <table class="ie-table">
-        <thead><tr><th style="text-align:left;">項目</th><th>回数</th><th></th></tr></thead>
-        <tbody><tr>
-          <td>相手サーブ失点</td>
-          <td><span class="ie-val neg" id="recv-loss-val">0</span></td>
-          <td>
-            <button class="ie-btn m" onclick="changeRecvLoss(-1)">−</button>
-            <button class="ie-btn p" onclick="changeRecvLoss(1)">＋</button>
-          </td>
-        </tr></tbody>
       </table>
       <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn" onclick="resetIE()">IEリセット</button>
@@ -210,12 +197,6 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
             <div class="panel-title" style="margin-bottom:6px;">控え</div>
             <div class="bench-box" id="bench"></div>
           </div>
-          <div style="font-size:12px;color:#999;line-height:2.2;">
-            <div>S — セッター</div>
-            <div>OH — アウトサイドHT</div>
-            <div>MB — ミドルBK</div>
-            <div>OP — オポジット</div>
-          </div>
         </div>
       </div>
       <div style="margin-top:10px;font-size:11px;color:#bbb;">タップで配置 / もう一度タップで控えに戻す</div>
@@ -224,15 +205,23 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
   <div class="safe-bottom"></div>
 </div>
 
-<!-- セット終了モーダル (下からスライド) -->
+<!-- セット終了モーダル -->
 <div class="modal-overlay" id="modal" style="display:none;" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title" id="modal-title">第1セット 終了</div>
-    <div id="share-preview-wrap">
-      <canvas id="share-canvas"></canvas>
+    <div style="display:flex;border-radius:14px;overflow:hidden;border:1px solid #eee;margin-bottom:12px;">
+      <div style="flex:1;background:#EBF4FD;padding:16px 8px;text-align:center;">
+        <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px;" id="modal-our-name">自チーム</div>
+        <div style="font-size:56px;font-weight:700;color:#0C447C;line-height:1;" id="modal-our-score">0</div>
+      </div>
+      <div style="flex:1;background:#FDEBEB;padding:16px 8px;text-align:center;">
+        <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px;" id="modal-them-name">相手</div>
+        <div style="font-size:56px;font-weight:700;color:#7A1F1F;line-height:1;" id="modal-them-score">0</div>
+      </div>
     </div>
+    <div id="modal-sets-summary" style="font-size:13px;color:#888;text-align:center;margin-bottom:16px;line-height:1.8;"></div>
     <div class="modal-btns">
-      <button class="btn btn-line" onclick="shareImage()">📤 LINEで送る</button>
+      <button class="btn btn-line" onclick="shareText()">📤 LINEで送る</button>
       <button class="btn btn-primary" onclick="goNextSet()">次のセットへ →</button>
       <button class="btn" onclick="closeModalOnly()">閉じる</button>
     </div>
@@ -251,7 +240,7 @@ const COLORS=['#185FA5','#A32D2D','#854F0B','#3B6D11','#533AB7','#993556','#0F6E
 const STORAGE_KEY='vb_kids_members_v2';
 const TEAM_KEY='vb_kids_teams';
 
-let members=[],onCourt={},ieData={},recvLoss=0;
+let members=[],onCourt={},ieData={};
 let selectedBench=null,currentTab='score';
 let ourScore=0,themScore=0,sets=[],log=[];
 let ourTeamName='自チーム',themTeamName='相手チーム';
@@ -322,161 +311,53 @@ function updateLog(){
   }).join('');
 }
 
-// ---- SET END & SHARE IMAGE ----
+// ---- SET END ----
 function endSet(){
   pendingSetResult={our:ourScore,them:themScore,setNum:sets.length+1};
   document.getElementById('modal-title').textContent=`第${sets.length+1}セット 終了`;
-  buildShareImage();
+  document.getElementById('modal-our-name').textContent=ourTeamName;
+  document.getElementById('modal-them-name').textContent=themTeamName;
+  document.getElementById('modal-our-score').textContent=ourScore;
+  document.getElementById('modal-them-score').textContent=themScore;
+  // 過去セット一覧
+  const pastSets=[...sets,{our:ourScore,them:themScore}];
+  const ow=pastSets.filter(s=>s.our>s.them).length;
+  const tw=pastSets.filter(s=>s.them>s.our).length;
+  let summary=`通算 ${ourTeamName} ${ow}勝 ／ ${themTeamName} ${tw}勝`;
+  if(sets.length>0){
+    summary+='<br>'+sets.map((s,i)=>`第${i+1}セット: ${s.our}－${s.them}`).join('　');
+  }
+  document.getElementById('modal-sets-summary').innerHTML=summary;
   document.getElementById('modal').style.display='flex';
 }
 
-function buildShareImage(){
-  const SC=2;
-  const IW=480, IH=520;
-  const sc=document.getElementById('share-canvas');
-  sc.width=IW*SC; sc.height=IH*SC;
-  sc.style.width=IW+'px'; sc.style.height=IH+'px';
-  const c=sc.getContext('2d');
-  c.scale(SC,SC);
-
-  // 背景
-  c.fillStyle='#111827';
-  c.fillRect(0,0,IW,IH);
-
-  // ヘッダー
-  c.fillStyle='rgba(255,255,255,0.06)';
-  c.fillRect(0,0,IW,52);
-  c.fillStyle='rgba(255,255,255,0.9)';
-  c.font='bold 16px -apple-system,sans-serif';
-  c.textAlign='center';
-  c.textBaseline='middle';
-  c.fillText(`第${pendingSetResult.setNum}セット`, IW/2, 26);
-
-  // コートを縮小描画
-  const courtX=30, courtY=62;
-  const cw=IW-60, ch=Math.round((IH-60-60)* 0.95);
-  drawCourtImg(c,courtX,courtY,cw,ch);
-
-  // 相手コート上半分オーバーレイ
-  const halfH=ch*0.5;
-  c.fillStyle='rgba(120,30,30,0.72)';
-  rrFill(c,courtX,courtY,cw,halfH-2,10);
-
-  // 相手チーム名
-  c.fillStyle='rgba(255,200,200,0.95)';
-  c.font='bold 14px -apple-system,sans-serif';
-  c.textAlign='center'; c.textBaseline='middle';
-  c.fillText(themTeamName, courtX+cw/2, courtY+halfH*0.2);
-
-  // 相手スコア
-  c.fillStyle='#ff8080';
-  c.font=`bold 80px -apple-system,sans-serif`;
-  c.fillText(String(pendingSetResult.them), courtX+cw/2, courtY+halfH*0.62);
-
-  // 自チームコート下半分オーバーレイ
-  const botY=courtY+halfH+2;
-  const botH=ch-halfH-2;
-  c.fillStyle='rgba(12,68,124,0.72)';
-  rrFill(c,courtX,botY,cw,botH,10);
-
-  // 自チーム名
-  c.fillStyle='rgba(180,220,255,0.95)';
-  c.font='bold 14px -apple-system,sans-serif';
-  c.textAlign='center'; c.textBaseline='middle';
-  c.fillText(ourTeamName, courtX+cw/2, botY+botH*0.22);
-
-  // 自チームスコア
-  c.fillStyle='#80cfff';
-  c.font=`bold 80px -apple-system,sans-serif`;
-  c.fillText(String(pendingSetResult.our), courtX+cw/2, botY+botH*0.68);
-
-  // 選手を重ねて描く
-  drawPlayersImg(c,courtX,courtY,cw,ch);
-
-  // 通算
-  const pastSets=[...sets,pendingSetResult];
+function buildShareText(){
+  const r=pendingSetResult;
+  const pastSets=[...sets,r];
   const ow=pastSets.filter(s=>s.our>s.them).length;
   const tw=pastSets.filter(s=>s.them>s.our).length;
-  c.fillStyle='rgba(255,255,255,0.7)';
-  c.font='13px -apple-system,sans-serif';
-  c.textAlign='center'; c.textBaseline='middle';
-  c.fillText(`通算  ${ourTeamName} ${ow}勝 ／ ${themTeamName} ${tw}勝`, IW/2, courtY+ch+22);
+  let text=`🏐 第${r.setNum}セット
+`;
+  text+=`${ourTeamName} ${r.our} - ${r.them} ${themTeamName}
 
+`;
   if(sets.length>0){
-    c.fillStyle='rgba(255,255,255,0.4)';
-    c.font='11px -apple-system,sans-serif';
-    const t=sets.map((s,i)=>`第${i+1}セット ${s.our}-${s.them}`).join('　');
-    c.fillText(t, IW/2, courtY+ch+40);
+    text+=sets.map((s,i)=>`第${i+1}セット: ${s.our}-${s.them}`).join('  ')+'
+
+';
   }
+  text+=`通算 ${ourTeamName} ${ow}勝 ／ ${themTeamName} ${tw}勝`;
+  return text;
 }
 
-function drawCourtImg(c,x,y,w,h){
-  c.fillStyle='#2d7a3a';
-  rrFill(c,x,y,w,h,12);
-  c.fillStyle='rgba(0,0,0,0.15)';
-  c.fillRect(x+12,y+12,w-24,h*0.5-12);
-  c.strokeStyle='rgba(255,255,255,0.6)';
-  c.lineWidth=1.5;
-  c.strokeRect(x+12,y+12,w-24,h-24);
-  c.lineWidth=4; c.strokeStyle='rgba(255,255,255,0.9)';
-  c.beginPath();c.moveTo(x+12,y+h*0.5);c.lineTo(x+w-12,y+h*0.5);c.stroke();
-  c.lineWidth=1.5; c.strokeStyle='rgba(255,255,255,0.4)'; c.setLineDash([4,4]);
-  c.beginPath();c.moveTo(x+12,y+h*0.68);c.lineTo(x+w-12,y+h*0.68);c.stroke();
-  c.setLineDash([]);
-}
-
-function drawPlayersImg(c,x,y,w,h){
-  const sx=w/CW, sy=h/CH;
-  POSITIONS.forEach(p=>{
-    const px=x+p.x*CW*sx, py=y+p.y*CH*sy, pl=onCourt[p.id];
-    const r=22*Math.min(sx,sy);
-    c.beginPath(); c.arc(px,py,r,0,Math.PI*2);
-    c.fillStyle=pl?pl.color:'rgba(0,0,0,0.2)'; c.fill();
-    c.strokeStyle=pl?'white':'rgba(255,255,255,0.3)'; c.lineWidth=pl?2:1; c.stroke();
-    c.textAlign='center'; c.textBaseline='middle';
-    if(pl){
-      c.fillStyle='white'; c.font=`bold ${Math.round(11*sx)}px -apple-system,sans-serif`;
-      c.fillText(pl.name.slice(0,4),px,py-4*sy);
-      c.font=`${Math.round(9*sx)}px -apple-system,sans-serif`;
-      c.fillStyle='rgba(255,255,255,0.8)'; c.fillText(p.label,px,py+9*sy);
-    } else {
-      c.fillStyle='rgba(255,255,255,0.5)'; c.font=`bold ${Math.round(11*sx)}px -apple-system,sans-serif`;
-      c.fillText(p.label,px,py);
-    }
-    c.textBaseline='alphabetic';
-  });
-}
-
-function rrFill(c,x,y,w,h,r){
-  c.beginPath();
-  c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);
-  c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);
-  c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);
-  c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);
-  c.closePath();c.fill();
-}
-
-async function shareImage(){
-  const sc=document.getElementById('share-canvas');
-  sc.toBlob(async blob=>{
-    if(!blob){alert('画像の生成に失敗しました');return;}
-    const file=new File([blob],'score.png',{type:'image/png'});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
-      try{ await navigator.share({files:[file],title:`第${pendingSetResult.setNum}セット ${ourTeamName} ${pendingSetResult.our}-${pendingSetResult.them} ${themTeamName}`}); }
-      catch(e){ if(e.name!=='AbortError') fallbackDownload(); }
-    } else {
-      fallbackDownload();
-    }
-  },'image/png');
-}
-
-function fallbackDownload(){
-  const sc=document.getElementById('share-canvas');
-  const a=document.createElement('a');
-  a.download=`set${pendingSetResult.setNum}_score.png`;
-  a.href=sc.toDataURL('image/png');
-  a.click();
-  alert('画像を保存しました。LINEのトークから送ってください。');
+function shareText(){
+  const text=buildShareText();
+  if(navigator.share){
+    navigator.share({title:`第${pendingSetResult.setNum}セット`,text}).catch(()=>{});
+  } else {
+    const encoded=encodeURIComponent(text);
+    window.open(`https://line.me/R/msg/text/?${encoded}`,'_blank');
+  }
 }
 
 function goNextSet(){
@@ -515,14 +396,21 @@ function changeIEServe(name,type,delta){
   }
   renderIE();
 }
-function changeRecvLoss(delta){
-  recvLoss=Math.max(0,recvLoss+delta);
-  document.getElementById('recv-loss-val').textContent=recvLoss;
-  if(delta===1)addPoint('them',1,'相手サーブ');
-  else if(themScore>0)addPoint('them',-1);
-  renderIE();
-}
+
 function renderIE(){
+  // セット別スコア表示
+  const setScoreEl=document.getElementById('ie-set-scores');
+  if(sets.length>0){
+    setScoreEl.style.display='';
+    setScoreEl.innerHTML='<div style="font-size:11px;color:#999;font-weight:600;margin-bottom:4px;">セット結果</div>'+
+      sets.map((s,i)=>{
+        const cls=s.our>s.them?'color:#185FA5;font-weight:700':s.them>s.our?'color:#A32D2D;font-weight:700':'color:#888';
+        return `<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:13px;"><span style="color:#888">第${i+1}セット</span><span style="${cls}">${s.our} - ${s.them}</span></div>`;
+      }).join('')+
+      `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;font-weight:600;"><span style="color:#888">現在</span><span style="color:#185FA5;">${ourScore}</span><span style="color:#888;padding:0 4px;">-</span><span style="color:#A32D2D;">${themScore}</span></div>`;
+  } else {
+    setScoreEl.style.display='none';
+  }
   const body=document.getElementById('ie-serve-body');
   if(!members.length){body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:16px;color:#bbb;">先にメンバーを登録してください</td></tr>';renderIESummary();return;}
   body.innerHTML='';
@@ -545,15 +433,14 @@ function renderIESummary(){
   document.getElementById('ie-summary').innerHTML=`
     <div class="scard"><div class="sl">サーブ<br>決まった</div><div class="sv pos">+${tp}</div></div>
     <div class="scard"><div class="sl">相手に<br>取られた</div><div class="sv neg">-${tm}</div></div>
-    <div class="scard"><div class="sl">相手サーブ<br>失点</div><div class="sv neg">-${recvLoss}</div></div>
     <div class="scard"><div class="sl">チームIE</div><div class="sv ${cls}">${ti>0?'+':''}${ti}</div></div>`;
 }
-function resetIE(){members.forEach(m=>{ieData[m.name]={plus:0,minus:0};});recvLoss=0;document.getElementById('recv-loss-val').textContent='0';renderIE();}
+function resetIE(){members.forEach(m=>{ieData[m.name]={plus:0,minus:0};});renderIE();}
 function copyIE(){
   const lines=[`【サーブ IE】${ourTeamName} vs ${themTeamName}`,''];
   let tp=0,tm=0;
   members.forEach(m=>{const d=ieData[m.name]||{plus:0,minus:0},ie=d.plus-d.minus;lines.push(`${m.name}: 決+${d.plus} 取-${d.minus} IE${ie>=0?'+':''}${ie}`);tp+=d.plus;tm+=d.minus;});
-  const ti=tp-tm;lines.push('');lines.push(`チーム: +${tp} -${tm} IE${ti>=0?'+':''}${ti}`);lines.push(`相手サーブ失点: ${recvLoss}`);
+  const ti=tp-tm;lines.push('');lines.push(`チーム: +${tp} -${tm} IE${ti>=0?'+':''}${ti}`);
   const text=lines.join('\n');
   if(navigator.share)navigator.share({title:'サーブIE',text}).catch(()=>{});
   else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('コピーしました'));
