@@ -383,32 +383,31 @@ function buildShareText(){
   let text='\uD83C\uDFD0 第'+r.setNum+'セット'+nl;
   text+=ourTeamName+' '+r.our+' - '+r.them+' '+themTeamName+nl;
 
-  // 得点ログを連続するチームごとにまとめる（logは新しい順なので逆順にしてから処理）
-  const chronolog=[...log].reverse(); // 古い順
+  // logは新しい順→古い順に逆転
+  const chronolog=[...log].reverse();
   if(chronolog.length>0){
     text+=nl+'【得点経過】'+nl;
-    // ランレングス圧縮
+    // ランレングス圧縮: 連続する同チームをひとまとめ
     const runs=[];
     chronolog.forEach(e=>{
-      if(runs.length>0&&runs[runs.length-1].side===e.side){
-        runs[runs.length-1].count++;
+      const last=runs[runs.length-1];
+      if(last&&last.side===e.side){
+        last.count++;
+        last.endOur=e.our;
+        last.endThem=e.them;
       } else {
-        runs.push({side:e.side,count:1,score:{our:e.our,them:e.them}});
+        runs.push({side:e.side,count:1,endOur:e.our,endThem:e.them});
       }
     });
-    // 最初のスコアを0-0から始める
-    let prevOur=0,prevThem=0;
+    // 古い順に出力
     runs.forEach(run=>{
       const name=run.side==='our'?ourTeamName:themTeamName;
-      const sign=run.side==='our'?'+':'-';
-      const endOur=run.score.our,endThem=run.score.them;
-      const scoreStr=endOur+'－'+endThem;
+      const score='('+run.endOur+'-'+run.endThem+')';
       if(run.count===1){
-        text+=name+' 得点 ('+scoreStr+')'+nl;
+        text+=name+' 得点 '+score+nl;
       } else {
-        text+=name+' +'+run.count+'点連続 ('+scoreStr+')'+nl;
+        text+=name+' +'+run.count+'点連続 '+score+nl;
       }
-      prevOur=endOur;prevThem=endThem;
     });
   }
 
