@@ -581,7 +581,7 @@ function changeIEServe(name,type,delta){
 function changeRecvOk(delta){
   recvOk=Math.max(0,recvOk+delta);
   document.getElementById('recv-ok-val').textContent=recvOk;
-  if(delta===1){addPoint('our',1,'相手サーブ→カット成功');advanceServer();updateServeMode('our');}
+  if(delta===1){addPoint('our',1,'相手サーブ→カット成功');updateServeMode('our');}
   else if(ourScore>0){addPoint('our',-1);updateServeMode('them');}
 }
 function changeRecvLoss2(delta){
