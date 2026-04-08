@@ -102,26 +102,10 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 <body>
 <div id="app">
   <div class="panel">
-    <div class="panel-title">大会名</div>
-    <input id="tournament-name" type="text" placeholder="大会名（例：春季大会）" maxlength="20" style="width:100%;height:40px;font-size:15px;padding:0 12px;border:1px solid #ddd;border-radius:10px;background:white;color:#111;font-family:inherit;margin-bottom:14px;" oninput="saveTournament()" />
-    <div class="panel-title" style="margin-top:2px;">チーム名</div>
-    <div class="team-names">
-      <div class="team-name-row">
-        <span class="team-name-label our">自チーム</span>
-        <input class="our-input" id="our-team-name" type="text" placeholder="チーム名" maxlength="12" value="自チーム" oninput="updateTeamNames()" />
-      </div>
-      <div class="team-name-row">
-        <span class="team-name-label them">相手チーム</span>
-        <input class="them-input" id="them-team-name" type="text" placeholder="チーム名" maxlength="12" value="相手チーム" oninput="updateTeamNames()" />
-      </div>
-    </div>
-  </div>
-
-  <div class="panel">
     <div class="tabs">
       <button class="tab active" onclick="showTab('score',this)">スコア</button>
       <button class="tab" onclick="showTab('ie',this)">サーブ</button>
-      <button class="tab" onclick="showTab('formation',this)">メンバー登録</button>
+      <button class="tab" onclick="showTab('formation',this)">設定</button>
     </div>
 
     <div id="score-section">
@@ -131,7 +115,7 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
           <div class="score-team" id="score-our-name">自チーム</div>
           <div class="score-num our" id="our-score">0</div>
           <div class="score-btns">
-            <button class="sbtn" onclick="addPoint('our',-1)">↩</button>
+            <button class="sbtn" onclick="addPoint('our',-1)" style="width:28px;height:28px;font-size:14px;opacity:0.5;">↩</button>
             <button class="sbtn plus-our" onclick="addPoint('our',1)">＋</button>
           </div>
         </div>
@@ -140,7 +124,7 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
           <div class="score-team" id="score-them-name">相手チーム</div>
           <div class="score-num them" id="them-score">0</div>
           <div class="score-btns">
-            <button class="sbtn" onclick="addPoint('them',-1)">↩</button>
+            <button class="sbtn" onclick="addPoint('them',-1)" style="width:28px;height:28px;font-size:14px;opacity:0.5;">↩</button>
             <button class="sbtn plus-them" onclick="addPoint('them',1)">＋</button>
           </div>
         </div>
@@ -160,49 +144,53 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
     <div id="ie-section" style="display:none;">
       <!-- 自チームサーブ中ブロック -->
       <div id="ie-block-our" style="border-radius:14px;border:3px solid #185FA5;background:#EBF4FD;padding:14px;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div style="font-size:13px;font-weight:700;color:#185FA5;" id="ie-our-serve-label">🏐 自チームサーブ中</div>
-          <div style="font-size:28px;font-weight:700;color:#0C447C;" id="ie-our-score">0</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:22px;font-weight:700;color:#0C447C;" id="ie-our-score">0</div>
+            <span style="font-size:14px;color:#888;">-</span>
+            <div style="font-size:22px;font-weight:700;color:#7A1F1F;" id="ie-them-score-our">0</div>
+          </div>
         </div>
-        <div class="summary-row" id="ie-summary" style="margin-bottom:8px;"></div>
-        <div style="font-size:11px;color:#444;margin-bottom:8px;">決まった → 自+1　／　取られた → 相手+1・サーブ権移動</div>
         <table class="ie-table">
           <thead><tr>
-            <th>選手</th>
-            <th>決まった<br><span style="color:#3B6D11;font-size:10px;">自+1</span></th>
-            <th>取られた<br><span style="color:#A32D2D;font-size:10px;">相手+1</span></th>
-            <th>IE</th>
+            <th style="font-size:11px;width:34%;">選手</th>
+            <th style="font-size:11px;">✅ 決まった<br><span style="color:#3B6D11;font-size:10px;">自+1</span></th>
+            <th style="font-size:11px;">❌ 取られた<br><span style="color:#A32D2D;font-size:10px;">相手+1</span></th>
+            <th style="font-size:11px;">IE</th>
           </tr></thead>
           <tbody id="ie-serve-body"></tbody>
         </table>
       </div>
 
       <!-- 相手サーブ中ブロック -->
-      <div id="ie-block-them" style="border-radius:14px;border:3px solid #ddd;background:#f8f8f8;padding:14px;margin-bottom:14px;opacity:0.5;">
+      <div id="ie-block-them" style="border-radius:14px;border:3px solid #ddd;background:#f8f8f8;padding:12px;margin-bottom:14px;opacity:0.5;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div style="font-size:13px;font-weight:700;color:#999;" id="ie-them-serve-label">相手サーブ中</div>
-          <div style="font-size:28px;font-weight:700;color:#7A1F1F;" id="ie-them-score">0</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:22px;font-weight:700;color:#0C447C;" id="ie-our-score-them">0</div>
+            <span style="font-size:14px;color:#888;">-</span>
+            <div style="font-size:22px;font-weight:700;color:#7A1F1F;" id="ie-them-score">0</div>
+          </div>
         </div>
-        <div style="font-size:11px;color:#444;margin-bottom:8px;">得点 → 自+1・サーブ権戻る　／　失点 → 相手+1</div>
-        <table class="ie-table">
-          <thead><tr>
-            <th style="text-align:left;">項目</th>
-            <th>回数</th>
-            <th></th>
-          </tr></thead>
-          <tbody>
-            <tr>
-              <td>カット成功 <span style="font-size:10px;color:#3B6D11;">自+1・権戻る</span></td>
-              <td><span class="ie-val pos" id="recv-ok-val">0</span></td>
-              <td id="recv-ok-btns"></td>
-            </tr>
-            <tr>
-              <td>カット失敗 <span style="font-size:10px;color:#A32D2D;">相手+1</span></td>
-              <td><span class="ie-val neg" id="recv-loss-val">0</span></td>
-              <td id="recv-loss-btns"></td>
-            </tr>
-          </tbody>
-        </table>
+        <div style="display:flex;gap:8px;">
+          <button id="recv-ok-btn" style="flex:1;padding:14px 8px;border-radius:12px;border:2px solid #3B6D11;background:#EAF3DE;font-size:13px;font-weight:700;color:#3B6D11;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;" onclick="changeRecvOk(1)">
+            <span style="font-size:22px;">✅</span>カット成功
+            <span style="font-size:10px;color:#3B6D11;font-weight:400;">自+1・権戻る</span>
+            <span style="font-size:16px;font-weight:700;" id="recv-ok-val">0</span>
+          </button>
+          <button id="recv-loss-btn" style="flex:1;padding:14px 8px;border-radius:12px;border:2px solid #A32D2D;background:#FCEBEB;font-size:13px;font-weight:700;color:#A32D2D;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;" onclick="changeRecvLoss2(1)">
+            <span style="font-size:22px;">❌</span>カット失敗
+            <span style="font-size:10px;color:#A32D2D;font-weight:400;">相手+1</span>
+            <span style="font-size:16px;font-weight:700;" id="recv-loss-val">0</span>
+          </button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button style="flex:1;padding:7px;border-radius:8px;border:1px solid #ddd;background:white;font-size:12px;color:#888;font-family:inherit;cursor:pointer;" onclick="changeRecvOk(-1)">✅ 取消</button>
+          <button style="flex:1;padding:7px;border-radius:8px;border:1px solid #ddd;background:white;font-size:12px;color:#888;font-family:inherit;cursor:pointer;" onclick="changeRecvLoss2(-1)">❌ 取消</button>
+        </div>
+        <div id="recv-ok-btns" style="display:none;"></div>
+        <div id="recv-loss-btns" style="display:none;"></div>
       </div>
 
       <div id="ie-set-scores" style="display:none;background:#f8f8f8;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px;"></div>
@@ -213,6 +201,24 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
     </div>
 
     <div id="formation-section" style="display:none;">
+      <!-- 大会名・チーム名 -->
+      <div style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f0f0f0;">
+        <div class="panel-title" style="margin-bottom:8px;">大会名</div>
+        <input id="tournament-name" type="text" placeholder="大会名（例：春季大会）" maxlength="20"
+          style="width:100%;height:38px;font-size:14px;padding:0 12px;border:1px solid #ddd;border-radius:10px;background:white;color:#111;font-family:inherit;margin-bottom:12px;"
+          oninput="saveTournament()" />
+        <div class="panel-title" style="margin-bottom:8px;">チーム名</div>
+        <div class="team-names">
+          <div class="team-name-row">
+            <span class="team-name-label our">自チーム</span>
+            <input class="our-input" id="our-team-name" type="text" placeholder="チーム名" maxlength="12" value="自チーム" oninput="updateTeamNames()" />
+          </div>
+          <div class="team-name-row">
+            <span class="team-name-label them">相手チーム</span>
+            <input class="them-input" id="them-team-name" type="text" placeholder="チーム名" maxlength="12" value="相手チーム" oninput="updateTeamNames()" />
+          </div>
+        </div>
+      </div>
       <!-- メンバー登録 -->
       <div style="margin-bottom:14px;">
         <div class="member-header">
@@ -351,10 +357,8 @@ function updateScore(){
   document.getElementById('our-score').textContent=ourScore;
   document.getElementById('them-score').textContent=themScore;
   // IEタブのスコアも同期
-  const el1=document.getElementById('ie-our-score');
-  const el2=document.getElementById('ie-them-score');
-  if(el1)el1.textContent=ourScore;
-  if(el2)el2.textContent=themScore;
+  ['ie-our-score','ie-our-score-them'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=ourScore;});
+  ['ie-them-score','ie-them-score-our'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=themScore;});
   updateServeMode(serveMode);
   updateSetInfo();updateLog();
 }
@@ -542,9 +546,11 @@ function renderServeHighlight(){
   rows.forEach(tr=>{
     const nameCell=tr.querySelector('td');
     if(!nameCell)return;
-    const isHighlight=serveMode==='our'&&cs&&nameCell.textContent.includes(cs.name);
-    tr.style.background=isHighlight?'#EBF4FD':'';
-    tr.style.outline=isHighlight?'2px solid #185FA5':'';
+    // 名前セルのtextContentからサーバー名を判定
+    const isHighlight=cs&&nameCell.textContent.trim().includes(cs.name);
+    tr.style.background=isHighlight?'#dbeeff':'';
+    tr.style.borderLeft=isHighlight?'4px solid #185FA5':'';
+    tr.style.borderRadius=isHighlight?'8px':'';
   });
 }
 
@@ -566,22 +572,18 @@ function changeRecvOk(delta){
   document.getElementById('recv-ok-val').textContent=recvOk;
   if(delta===1){addPoint('our',1,'相手サーブ→カット成功');advanceServer();updateServeMode('our');}
   else if(ourScore>0){addPoint('our',-1);updateServeMode('them');}
-  renderIESummary();
 }
 function changeRecvLoss2(delta){
   recvLoss=Math.max(0,recvLoss+delta);
   document.getElementById('recv-loss-val').textContent=recvLoss;
   if(delta===1)addPoint('them',1,'相手サーブ→カット失敗');
   else if(themScore>0)addPoint('them',-1);
-  renderIESummary();
 }
 
 function renderIE(){
   // 現在スコア
-  const eos=document.getElementById('ie-our-score');
-  const ets=document.getElementById('ie-them-score');
-  if(eos)eos.textContent=ourScore;
-  if(ets)ets.textContent=themScore;
+  ['ie-our-score','ie-our-score-them'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=ourScore;});
+  ['ie-them-score','ie-them-score-our'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=themScore;});
   // サーブ権表示
   updateServeMode(serveMode);
   // セット別スコア表示
@@ -601,51 +603,50 @@ function renderIE(){
   if(!members.length){
     body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:16px;color:#bbb;">先にメンバーを登録してください</td></tr>';
     document.getElementById('ie-recv-body').innerHTML='<tr><td colspan="3" style="text-align:center;padding:12px;color:#bbb;">—</td></tr>';
-    renderIESummary();return;
+    return;
   }
+  const currentServer=getCurrentServer();
   body.innerHTML='';
   members.forEach(m=>{
-    const d=ieData[m.name]||{plus:0,minus:0,recvOk:0,recvNg:0};
+    const d=ieData[m.name]||{plus:0,minus:0};
     const ie=d.plus-d.minus,cls=ie>0?'pos':ie<0?'neg':'zero';
+    const isCurrentServer=serveMode==='our'&&currentServer&&currentServer.name===m.name;
+    const so=serveOrder.find(s=>s.name===m.name);
     const tr=document.createElement('tr');
-    const b1m=document.createElement('button');b1m.className='ie-btn m';b1m.textContent='−';b1m.onclick=()=>changeIEServe(m.name,'plus',-1);
-    const b1p=document.createElement('button');b1p.className='ie-btn p';b1p.textContent='＋';b1p.onclick=()=>changeIEServe(m.name,'plus',1);
-    const b2m=document.createElement('button');b2m.className='ie-btn m';b2m.textContent='−';b2m.onclick=()=>changeIEServe(m.name,'minus',-1);
-    const b2p=document.createElement('button');b2p.className='ie-btn p';b2p.textContent='＋';b2p.onclick=()=>changeIEServe(m.name,'minus',1);
-    const dot='<span class="chip-dot" style="background:'+m.color+';display:inline-block;vertical-align:middle;margin-right:5px;"></span>';
-    tr.innerHTML='<td>'+dot+m.name+'</td><td></td><td></td><td style="font-size:16px;font-weight:700;" class="'+cls+'">'+(ie>0?'+':'')+ie+'</td>';
+    if(isCurrentServer){
+      tr.style.cssText='background:#dbeeff;border-left:4px solid #185FA5;border-radius:8px;';
+    }
+    const orderBadge=so?'<span style="font-size:10px;background:#185FA5;color:white;border-radius:10px;padding:1px 5px;margin-right:4px;">'+so.order+'</span>':'';
+    const serverIcon=isCurrentServer?'🏐 ':'';
+    const dot='<span class="chip-dot" style="background:'+m.color+';display:inline-block;vertical-align:middle;margin-right:4px;"></span>';
+    // ✅決まった（大ボタン）と ↩取消（小ボタン）
+    // ✅ボタン＋↩（横並び）
+    const btnOk=document.createElement('button');
+    btnOk.style.cssText='height:36px;padding:0 10px;border-radius:8px;border:2px solid #3B6D11;background:#EAF3DE;font-size:13px;font-weight:700;color:#3B6D11;font-family:inherit;cursor:pointer;';
+    btnOk.textContent='✅ '+d.plus;
+    btnOk.onclick=()=>changeIEServe(m.name,'plus',1);
+    const btnOkUndo=document.createElement('button');
+    btnOkUndo.style.cssText='height:36px;width:32px;border-radius:8px;border:1px solid #ddd;background:#f5f5f5;font-size:13px;color:#aaa;font-family:inherit;cursor:pointer;';
+    btnOkUndo.textContent='↩';btnOkUndo.onclick=()=>changeIEServe(m.name,'plus',-1);
+    // ❌ボタン＋↩（横並び）
+    const btnNg=document.createElement('button');
+    btnNg.style.cssText='height:36px;padding:0 10px;border-radius:8px;border:2px solid #A32D2D;background:#FCEBEB;font-size:13px;font-weight:700;color:#A32D2D;font-family:inherit;cursor:pointer;';
+    btnNg.textContent='❌ '+d.minus;
+    btnNg.onclick=()=>changeIEServe(m.name,'minus',1);
+    const btnNgUndo=document.createElement('button');
+    btnNgUndo.style.cssText='height:36px;width:32px;border-radius:8px;border:1px solid #ddd;background:#f5f5f5;font-size:13px;color:#aaa;font-family:inherit;cursor:pointer;';
+    btnNgUndo.textContent='↩';btnNgUndo.onclick=()=>changeIEServe(m.name,'minus',-1);
+
+    tr.innerHTML='<td style="font-size:13px;padding:6px 4px;">'+dot+orderBadge+serverIcon+m.name+'</td><td style="padding:4px 2px;white-space:nowrap;"></td><td style="padding:4px 2px;white-space:nowrap;"></td><td style="font-size:14px;font-weight:700;text-align:center;padding:4px 2px;" class="'+cls+'">'+(ie>0?'+':'')+ie+'</td>';
     const cells=tr.querySelectorAll('td');
-    const v1=document.createElement('span');v1.className='ie-val';v1.textContent=d.plus;
-    cells[1].appendChild(b1m);cells[1].appendChild(v1);cells[1].appendChild(b1p);
-    const v2=document.createElement('span');v2.className='ie-val';v2.textContent=d.minus;
-    cells[2].appendChild(b2m);cells[2].appendChild(v2);cells[2].appendChild(b2p);
+    const wrapOk=document.createElement('div');wrapOk.style.cssText='display:flex;gap:3px;align-items:center;';
+    wrapOk.appendChild(btnOk);wrapOk.appendChild(btnOkUndo);cells[1].appendChild(wrapOk);
+    const wrapNg=document.createElement('div');wrapNg.style.cssText='display:flex;gap:3px;align-items:center;';
+    wrapNg.appendChild(btnNg);wrapNg.appendChild(btnNgUndo);cells[2].appendChild(wrapNg);
     body.appendChild(tr);
   });
-  // 相手サーブ中ボタン組み立て
-  const okBtns=document.getElementById('recv-ok-btns');
-  const lsBtns=document.getElementById('recv-loss-btns');
-  if(okBtns&&!okBtns.hasChildNodes()){
-    const bm=document.createElement('button');bm.className='ie-btn m';bm.textContent='−';bm.onclick=()=>changeRecvOk(-1);
-    const bp=document.createElement('button');bp.className='ie-btn p';bp.textContent='＋';bp.onclick=()=>changeRecvOk(1);
-    okBtns.appendChild(bm);okBtns.appendChild(bp);
-  }
-  if(lsBtns&&!lsBtns.hasChildNodes()){
-    const bm=document.createElement('button');bm.className='ie-btn m';bm.textContent='−';bm.onclick=()=>changeRecvLoss2(-1);
-    const bp=document.createElement('button');bp.className='ie-btn p';bp.textContent='＋';bp.onclick=()=>changeRecvLoss2(1);
-    lsBtns.appendChild(bm);lsBtns.appendChild(bp);
-  }
-  renderIESummary();
 }
-function renderIESummary(){
-  let tp=0,tm=0;
-  members.forEach(m=>{const d=ieData[m.name]||{plus:0,minus:0};tp+=d.plus;tm+=d.minus;});
-  const ti=tp-tm,cls=ti>0?'pos':ti<0?'neg':'zero';
-  const sumEl=document.getElementById('ie-summary');
-  if(sumEl)sumEl.innerHTML=
-    '<div class="scard"><div class="sl">サーブ<br>決まった</div><div class="sv pos">+'+tp+'</div></div>'+
-    '<div class="scard"><div class="sl">相手に<br>取られた</div><div class="sv neg">-'+tm+'</div></div>'+
-    '<div class="scard"><div class="sl">チームIE</div><div class="sv '+cls+'">'+(ti>0?'+':'')+ti+'</div></div>';
-}
+
 function resetIE(){members.forEach(m=>{ieData[m.name]={plus:0,minus:0};});recvLoss=0;recvOk=0;const ov=document.getElementById('recv-ok-val');if(ov)ov.textContent='0';document.getElementById('recv-loss-val').textContent='0';renderIE();}
 function copyIE(){
   const lines=[`【サーブ IE】${ourTeamName} vs ${themTeamName}`,''];
@@ -814,8 +815,18 @@ function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo
 function posAt(cx,cy){for(const p of POSITIONS){const x=p.x*CW,y=p.y*CH;if(Math.hypot(cx-x,cy-y)<34)return p.id;}return -1;}
 function handleCourtTap(cx,cy){
   const idx=posAt(cx,cy);if(idx<0)return;
-  if(onCourt[idx]){addToBench(onCourt[idx].name);delete onCourt[idx];drawCourt();renderServeOrderList();}
-  else if(selectedBench){const m=members.find(m=>m.name===selectedBench);if(m){onCourt[idx]={name:m.name,color:m.color};selectedBench=null;clearBenchSelection();drawCourt();renderServeOrderList();}}
+  if(onCourt[idx]){
+    addToBench(onCourt[idx].name);delete onCourt[idx];drawCourt();renderServeOrderList();
+  } else if(selectedBench){
+    const m=members.find(m=>m.name===selectedBench);
+    if(m){
+      // 既に別のポジションにいる場合は移動
+      Object.keys(onCourt).forEach(k=>{if(onCourt[k].name===m.name)delete onCourt[k];});
+      onCourt[idx]={name:m.name,color:m.color};
+      removeBenchChip(m.name); // 控えから削除
+      selectedBench=null;clearBenchSelection();drawCourt();renderServeOrderList();
+    }
+  }
 }
 canvas.addEventListener('click',e=>{const r=canvas.getBoundingClientRect();handleCourtTap((e.clientX-r.left)*(CW/r.width),(e.clientY-r.top)*(CH/r.height));});
 canvas.addEventListener('touchend',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),t=e.changedTouches[0];handleCourtTap((t.clientX-r.left)*(CW/r.width),(t.clientY-r.top)*(CH/r.height));},{passive:false});
