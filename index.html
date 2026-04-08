@@ -98,10 +98,12 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 .bench-box { background: #f8f8f8; border: 2px dashed #ddd; border-radius: 12px; min-height: 56px; padding: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
 .safe-bottom { height: env(safe-area-inset-bottom, 20px); }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="app">
   <div class="panel">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px;"><span id="sync-status" style="font-size:11px;color:#888;">🔄 接続中...</span></div>
     <div class="tabs">
       <button class="tab active" onclick="showTab('score',this)">スコア</button>
       <button class="tab" onclick="showTab('ie',this)">サーブ</button>
@@ -136,6 +138,10 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
         <button class="btn" onclick="endSet()">セット終了</button>
         <button class="btn" onclick="resetAll()">全リセット</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="btn btn-primary" onclick="saveMatchJSON()" style="font-size:13px;">💾 試合データを保存</button>
+        <label class="btn" style="font-size:13px;cursor:pointer;">📂 読み込み<input type="file" accept=".json" onchange="loadMatchJSON(event)" style="display:none;"></label>
       </div>
       <div class="panel-title">得点ログ</div>
       <div class="log-area" id="log-area"><span style="color:#bbb">まだ得点がありません</span></div>
@@ -249,7 +255,10 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
         <div class="panel-title" style="margin-bottom:8px;">サーブ順設定</div>
         <div style="font-size:11px;color:#bbb;margin-bottom:10px;">選手を配置後、サーブ順（1〜6）を設定してください</div>
         <div id="serve-order-list"></div>
-        <button class="btn btn-primary" style="margin-top:10px;font-size:13px;" onclick="applyServeOrder()">サーブ順を確定</button>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-primary" style="font-size:13px;" onclick="applyServeOrder()">サーブ順を確定</button>
+          <button class="btn btn-danger-soft" style="font-size:13px;" onclick="resetServeOrder()">リセット</button>
+        </div>
         <div style="font-size:11px;color:#bbb;margin-top:6px;" id="serve-order-status"></div>
       </div>
     </div>
@@ -281,6 +290,13 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 </div>
 
 <script>
+const SUPABASE_URL='https://ftxfgztnhzvzffscsgan.supabase.co';
+const PASSPHRASE='Kiku';
+const SUPABASE_KEY='sb_publishable_coz8P8UTczQFs66LFg9r-A_ulAgq9jy';
+let supabase=null;
+let syncEnabled=false;
+let syncChannel=null;
+
 const CW=260, CH=380;
 const canvas=document.getElementById('court');
 const ctx=canvas.getContext('2d');
@@ -379,6 +395,7 @@ function addPoint(side,delta,src){
   if(delta===1)log.unshift({side,our:ourScore,them:themScore,set:sets.length+1,src:src||''});
   else if(log.length)log.shift();
   updateScore();
+  pushToSupabase();
 }
 function updateScore(){
   document.getElementById('our-score').textContent=ourScore;
@@ -511,7 +528,7 @@ function goNextSet(){
   if(pendingSetResult)sets.push({our:pendingSetResult.our,them:pendingSetResult.them});
   ourScore=0;themScore=0;log=[];pendingSetResult=null;
   document.getElementById('modal').style.display='none';
-  updateScore();updateSetHistory();
+  updateScore();updateSetHistory();pushToSupabase();
 }
 function closeModalOnly(){document.getElementById('modal').style.display='none';}
 function closeModal(e){if(e.target.id==='modal')closeModalOnly();}
@@ -525,10 +542,82 @@ function updateSetHistory(){
     return `<div class="set-row"><span class="set-row-label">第${i+1}セット</span><span class="set-row-score ${cls}">${s.our} - ${s.them}</span></div>`;
   }).join('');
 }
+function saveMatchJSON(){
+  const tournament=document.getElementById('tournament-name').value||'';
+  const data={
+    version:1,
+    savedAt:new Date().toISOString(),
+    tournament,
+    ourTeamName,
+    themTeamName,
+    sets,
+    currentScore:{our:ourScore,them:themScore},
+    ieData,
+    recvOk,
+    recvLoss,
+    log,
+    members,
+    serveOrder,
+  };
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a');
+  const date=new Date().toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'}).replace('/','-');
+  const name=(tournament||ourTeamName+'vs'+themTeamName)+'_'+date+'.json';
+  a.href=URL.createObjectURL(blob);
+  a.download=name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadMatchJSON(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.version){alert('形式が正しくありません');return;}
+      if(!confirm('現在のデータを上書きして読み込みますか？'))return;
+
+      // チーム名・大会名
+      if(data.tournament){document.getElementById('tournament-name').value=data.tournament;saveTournament();}
+      if(data.ourTeamName){document.getElementById('our-team-name').value=data.ourTeamName;}
+      if(data.themTeamName){document.getElementById('them-team-name').value=data.themTeamName;}
+      updateTeamNames();
+
+      // スコア
+      sets=data.sets||[];
+      ourScore=data.currentScore?.our||0;
+      themScore=data.currentScore?.them||0;
+      log=data.log||[];
+
+      // IE
+      ieData=data.ieData||{};
+      recvOk=data.recvOk||0;
+      recvLoss=data.recvLoss||0;
+      const ov=document.getElementById('recv-ok-val');if(ov)ov.textContent=recvOk;
+      const lv=document.getElementById('recv-loss-val');if(lv)lv.textContent=recvLoss;
+
+      // サーブ順
+      serveOrder=data.serveOrder||[];
+
+      updateScore();
+      updateSetHistory();
+      if(currentTab==='ie')renderIE();
+      alert('読み込み完了しました');
+    }catch(err){
+      alert('読み込みに失敗しました: '+err.message);
+    }
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+
 function resetAll(){
   if(!confirm('全リセットしますか？'))return;
   ourScore=0;themScore=0;sets=[];log=[];pendingSetResult=null;
-  updateScore();updateSetHistory();
+  updateScore();updateSetHistory();pushToSupabase();
 }
 
 function updateServeMode(mode){
@@ -772,6 +861,12 @@ function onServeOrderChange(sel){
   renderServeOrderList();
 }
 
+function resetServeOrder(){
+  serveOrder=[];currentServerIdx=0;
+  renderServeOrderList();drawCourt();saveMembers();
+  const st=document.getElementById('serve-order-status');
+  if(st){st.textContent='サーブ順をリセットしました';st.style.color='#888';}
+}
 function applyServeOrder(){
   const list=document.getElementById('serve-order-list');
   if(!list)return;
@@ -885,6 +980,92 @@ loadTeamNames();
 loadMembers();
 updateScore();
 drawCourt();
+checkPassphrase();
+
+// ---- SUPABASE SYNC ----
+function checkPassphrase(){
+  const saved=localStorage.getItem('vb_pass');
+  if(saved===PASSPHRASE){ checkPassphrase(); return; }
+  const input=prompt('合言葉を入力してください');
+  if(input===PASSPHRASE){
+    localStorage.setItem('vb_pass',PASSPHRASE);
+    checkPassphrase();
+  } else {
+    updateSyncUI('error');
+    document.getElementById('sync-status').textContent='🔴 合言葉が違います（同期なし）';
+  }
+}
+
+async function initSupabase(){
+  try{
+    supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    updateSyncUI('connecting');
+    // 既存データを取得
+    const {data,error}=await supabase.from('match_data').select('data').eq('id','current').single();
+    if(error)throw error;
+    if(data&&data.data&&Object.keys(data.data).length>0){
+      const remote=data.data;
+      // ローカルが空なら自動でリモートを読み込む
+      if(ourScore===0&&themScore===0&&sets.length===0){
+        applyRemoteData(remote);
+      }
+    }
+    // リアルタイム購読
+    syncChannel=supabase.channel('match_data_changes')
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'match_data'},payload=>{
+        if(payload.new&&payload.new.data){
+          applyRemoteData(payload.new.data);
+        }
+      })
+      .subscribe();
+    syncEnabled=true;
+    updateSyncUI('connected');
+  }catch(e){
+    console.error('Supabase init error:',e);
+    updateSyncUI('error');
+  }
+}
+
+function applyRemoteData(remote){
+  if(remote.ourTeamName){document.getElementById('our-team-name').value=remote.ourTeamName;}
+  if(remote.themTeamName){document.getElementById('them-team-name').value=remote.themTeamName;}
+  if(remote.tournament){document.getElementById('tournament-name').value=remote.tournament;}
+  updateTeamNames();
+  if(remote.sets!==undefined)sets=remote.sets;
+  if(remote.ourScore!==undefined)ourScore=remote.ourScore;
+  if(remote.themScore!==undefined)themScore=remote.themScore;
+  if(remote.log!==undefined)log=remote.log;
+  if(remote.ieData!==undefined)ieData=remote.ieData;
+  if(remote.recvOk!==undefined){recvOk=remote.recvOk;const e=document.getElementById('recv-ok-val');if(e)e.textContent=recvOk;}
+  if(remote.recvLoss!==undefined){recvLoss=remote.recvLoss;const e=document.getElementById('recv-loss-val');if(e)e.textContent=recvLoss;}
+  if(remote.serveMode!==undefined)serveMode=remote.serveMode;
+  if(remote.currentServerIdx!==undefined)currentServerIdx=remote.currentServerIdx;
+  updateScore();updateSetHistory();
+  if(currentTab==='ie')renderIE();
+}
+
+async function pushToSupabase(){
+  if(!syncEnabled||!supabase)return;
+  const payload={
+    ourTeamName,themTeamName,
+    tournament:document.getElementById('tournament-name').value||'',
+    sets,ourScore,themScore,log,
+    ieData,recvOk,recvLoss,
+    serveMode,currentServerIdx,
+    serveOrder,
+  };
+  try{
+    await supabase.from('match_data').update({data:payload,updated_at:new Date().toISOString()}).eq('id','current');
+  }catch(e){console.error('push error:',e);}
+}
+
+function updateSyncUI(status){
+  const el=document.getElementById('sync-status');
+  if(!el)return;
+  if(status==='connecting'){el.textContent='🔄 接続中...';el.style.color='#888';}
+  else if(status==='connected'){el.textContent='🟢 同期中';el.style.color='#3B6D11';}
+  else{el.textContent='🔴 オフライン';el.style.color='#A32D2D';}
+}
 </script>
 </body>
 </html>
