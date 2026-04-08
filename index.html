@@ -991,22 +991,37 @@ checkPassphrase();
 function checkPassphrase(){
   const saved=localStorage.getItem('vb_pass');
   if(saved===PASSPHRASE){ initSupabase(); return; }
-  if(saved===PASSPHRASE_VIEW){ startViewMode(); return; }
-  updateSyncUI('error');
-  document.getElementById('sync-status').textContent='🔴 タップして接続';
+  // 合言葉なし or 不明 → 閲覧モードで自動起動
+  startViewMode();
 }
 
 function onSyncStatusTap(){
-  if(syncEnabled||viewMode)return;
+  if(syncEnabled){
+    // 入力モード中 → 閲覧モードに切り替え
+    if(confirm('閲覧モードに切り替えますか？')){
+      localStorage.removeItem('vb_pass');
+      location.reload();
+    }
+    return;
+  }
+  if(viewMode){
+    // 閲覧モード中 → 入力モードへ切り替え
+    const val=window.prompt('入力モードの合言葉を入力してください');
+    if(val===null)return;
+    if(val===PASSPHRASE){
+      localStorage.setItem('vb_pass',PASSPHRASE);
+      location.reload();
+    } else if(val!==''){
+      alert('合言葉が違います');
+    }
+    return;
+  }
+  // 未接続 → 入力モードで接続
   const val=window.prompt('合言葉を入力してください');
   if(val===null)return;
   if(val===PASSPHRASE){
     localStorage.setItem('vb_pass',PASSPHRASE);
-    updateSyncUI('connecting');
-    initSupabase();
-  } else if(val===PASSPHRASE_VIEW){
-    localStorage.setItem('vb_pass_view',PASSPHRASE_VIEW);
-    startViewMode();
+    location.reload();
   } else if(val!==''){
     alert('合言葉が違います');
   }
