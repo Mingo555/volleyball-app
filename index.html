@@ -323,11 +323,38 @@ function loadTeamNames(){
     if(raw){const t=JSON.parse(raw);document.getElementById('our-team-name').value=t.our||'自チーム';document.getElementById('them-team-name').value=t.them||'相手チーム';updateTeamNames();}
   }catch(e){}
 }
-function saveMembers(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(members));flashSave();}catch(e){}}
+function saveMembers(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(members));
+    // コート配置・サーブ順も保存
+    const courtData={};
+    Object.keys(onCourt).forEach(k=>{courtData[k]=onCourt[k];});
+    localStorage.setItem('vb_court',JSON.stringify(courtData));
+    localStorage.setItem('vb_serve_order',JSON.stringify(serveOrder));
+    flashSave();
+  }catch(e){}
+}
 function loadMembers(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY);
-    if(raw){JSON.parse(raw).forEach(m=>{members.push(m);if(!ieData[m.name])ieData[m.name]={plus:0,minus:0};});renderMemberList();members.forEach(m=>addToBench(m.name));}
+    if(raw){JSON.parse(raw).forEach(m=>{members.push(m);if(!ieData[m.name])ieData[m.name]={plus:0,minus:0};});renderMemberList();}
+    // コート配置を復元
+    const courtRaw=localStorage.getItem('vb_court');
+    if(courtRaw){
+      const saved=JSON.parse(courtRaw);
+      Object.keys(saved).forEach(k=>{
+        const p=saved[k];
+        if(members.find(m=>m.name===p.name)) onCourt[k]=p;
+      });
+    }
+    // 控えに追加（コートにいない選手のみ）
+    members.forEach(m=>{
+      const onField=Object.values(onCourt).some(p=>p.name===m.name);
+      if(!onField) addToBench(m.name);
+    });
+    // サーブ順を復元
+    const soRaw=localStorage.getItem('vb_serve_order');
+    if(soRaw) serveOrder=JSON.parse(soRaw);
   }catch(e){}
 }
 function flashSave(){const b=document.getElementById('save-badge');b.style.color='#3B6D11';setTimeout(()=>b.style.color='',1000);}
@@ -570,10 +597,10 @@ function changeIEServe(name,type,delta){
   ieData[name][type]=Math.max(0,ieData[name][type]+delta);
   if(delta===1){
     if(type==='plus')addPoint('our',1,name+'サーブ');
-    if(type==='minus'){addPoint('them',1,name+'→相手');updateServeMode('them');}
+    if(type==='minus'){addPoint('them',1,name+'→相手');advanceServer();updateServeMode('them');}
   } else {
     if(type==='plus'&&ourScore>0)addPoint('our',-1);
-    if(type==='minus'&&themScore>0){addPoint('them',-1);updateServeMode('our');}
+    if(type==='minus'&&themScore>0){addPoint('them',-1);currentServerIdx=Math.max(0,currentServerIdx-1);updateServeMode('our');}
   }
   renderIE();
 }
@@ -773,6 +800,7 @@ function applyServeOrder(){
   document.getElementById('serve-order-status').textContent='✓ サーブ順を確定しました（'+newOrder.map(s=>s.order+'.'+s.name).join(' → ')+')';
   document.getElementById('serve-order-status').style.color='#3B6D11';
   drawCourt();
+  saveMembers();
   if(currentTab==='ie')renderIE();
 }
 
@@ -828,15 +856,14 @@ function posAt(cx,cy){for(const p of POSITIONS){const x=p.x*CW,y=p.y*CH;if(Math.
 function handleCourtTap(cx,cy){
   const idx=posAt(cx,cy);if(idx<0)return;
   if(onCourt[idx]){
-    addToBench(onCourt[idx].name);delete onCourt[idx];drawCourt();renderServeOrderList();
+    addToBench(onCourt[idx].name);delete onCourt[idx];drawCourt();renderServeOrderList();saveMembers();
   } else if(selectedBench){
     const m=members.find(m=>m.name===selectedBench);
     if(m){
-      // 既に別のポジションにいる場合は移動
       Object.keys(onCourt).forEach(k=>{if(onCourt[k].name===m.name)delete onCourt[k];});
       onCourt[idx]={name:m.name,color:m.color};
-      removeBenchChip(m.name); // 控えから削除
-      selectedBench=null;clearBenchSelection();drawCourt();renderServeOrderList();
+      removeBenchChip(m.name);
+      selectedBench=null;clearBenchSelection();drawCourt();renderServeOrderList();saveMembers();
     }
   }
 }
