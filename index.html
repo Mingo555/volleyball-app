@@ -164,7 +164,7 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
       </div>
 
       <!-- 相手サーブ中ブロック -->
-      <div id="ie-block-them" style="border-radius:14px;border:3px solid #ddd;background:#f8f8f8;padding:12px;margin-bottom:14px;opacity:0.5;">
+      <div id="ie-block-them" style="border-radius:14px;border:1px solid #ddd;background:#f8f8f8;padding:12px;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div style="font-size:13px;font-weight:700;color:#999;" id="ie-them-serve-label">相手サーブ中</div>
           <div style="display:flex;align-items:center;gap:6px;">
@@ -518,9 +518,9 @@ function updateServeMode(mode){
     const cs=getCurrentServer();
     labelOur.textContent='🏐 '+(cs?cs.name+'がサーブ中':'自チームサーブ中');
     labelOur.style.color='#185FA5';
-    blockThem.style.border='3px solid #ddd';
+    blockThem.style.border='1px solid #ddd';
     blockThem.style.background='#f8f8f8';
-    blockThem.style.opacity='0.5';
+    blockThem.style.opacity='1';
     labelThem.textContent='相手サーブ中';
     labelThem.style.color='#999';
   } else {
@@ -529,9 +529,9 @@ function updateServeMode(mode){
     blockThem.style.opacity='1';
     labelThem.textContent='🏐 相手サーブ中';
     labelThem.style.color='#A32D2D';
-    blockOur.style.border='3px solid #ddd';
+    blockOur.style.border='1px solid #ddd';
     blockOur.style.background='#f8f8f8';
-    blockOur.style.opacity='0.5';
+    blockOur.style.opacity='1';
     labelOur.textContent='自チームサーブ中';
     labelOur.style.color='#999';
   }
@@ -544,10 +544,8 @@ function renderServeHighlight(){
   const rows=document.getElementById('ie-serve-body').querySelectorAll('tr');
   const cs=getCurrentServer();
   rows.forEach(tr=>{
-    const nameCell=tr.querySelector('td');
-    if(!nameCell)return;
-    // 名前セルのtextContentからサーバー名を判定
-    const isHighlight=cs&&nameCell.textContent.trim().includes(cs.name);
+    // data-nameで完全一致判定
+    const isHighlight=cs&&tr.dataset.membername===cs.name;
     tr.style.background=isHighlight?'#dbeeff':'';
     tr.style.borderLeft=isHighlight?'4px solid #185FA5':'';
     tr.style.borderRadius=isHighlight?'8px':'';
@@ -637,7 +635,8 @@ function renderIE(){
     btnNgUndo.style.cssText='height:36px;width:32px;border-radius:8px;border:1px solid #ddd;background:#f5f5f5;font-size:13px;color:#aaa;font-family:inherit;cursor:pointer;';
     btnNgUndo.textContent='↩';btnNgUndo.onclick=()=>changeIEServe(m.name,'minus',-1);
 
-    tr.innerHTML='<td style="font-size:13px;padding:6px 4px;">'+dot+orderBadge+serverIcon+m.name+'</td><td style="padding:4px 2px;white-space:nowrap;"></td><td style="padding:4px 2px;white-space:nowrap;"></td><td style="font-size:14px;font-weight:700;text-align:center;padding:4px 2px;" class="'+cls+'">'+(ie>0?'+':'')+ie+'</td>';
+    tr.dataset.membername=m.name;
+    tr.innerHTML='<td style="font-size:13px;padding:6px 4px;">'+dot+orderBadge+m.name+'</td><td style="padding:4px 2px;white-space:nowrap;"></td><td style="padding:4px 2px;white-space:nowrap;"></td><td style="font-size:14px;font-weight:700;text-align:center;padding:4px 2px;" class="'+cls+'">'+(ie>0?'+':'')+ie+'</td>';
     const cells=tr.querySelectorAll('td');
     const wrapOk=document.createElement('div');wrapOk.style.cssText='display:flex;gap:3px;align-items:center;';
     wrapOk.appendChild(btnOk);wrapOk.appendChild(btnOkUndo);cells[1].appendChild(wrapOk);
