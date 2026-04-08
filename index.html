@@ -102,7 +102,9 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 <body>
 <div id="app">
   <div class="panel">
-    <div class="panel-title">チーム名</div>
+    <div class="panel-title">大会名</div>
+    <input id="tournament-name" type="text" placeholder="大会名（例：春季大会）" maxlength="20" style="width:100%;height:40px;font-size:15px;padding:0 12px;border:1px solid #ddd;border-radius:10px;background:white;color:#111;font-family:inherit;margin-bottom:14px;" oninput="saveTournament()" />
+    <div class="panel-title" style="margin-top:2px;">チーム名</div>
     <div class="team-names">
       <div class="team-name-row">
         <span class="team-name-label our">自チーム</span>
@@ -116,25 +118,10 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
   </div>
 
   <div class="panel">
-    <div class="member-header">
-      <span class="panel-title" style="margin-bottom:0;">メンバー登録</span>
-      <span class="save-badge" id="save-badge"><span class="save-dot"></span>自動保存</span>
-    </div>
-    <div id="member-row">
-      <input id="name-input" type="text" placeholder="選手名（例：たなか）" maxlength="6" />
-      <button class="btn btn-primary" onclick="addMember()">追加</button>
-    </div>
-    <div id="member-list"></div>
-    <div style="margin-top:10px;">
-      <button class="btn btn-danger-soft" onclick="clearAllMembers()">メンバーを全削除</button>
-    </div>
-  </div>
-
-  <div class="panel">
     <div class="tabs">
       <button class="tab active" onclick="showTab('score',this)">スコア</button>
-      <button class="tab" onclick="showTab('ie',this)">サーブ IE</button>
-      <button class="tab" onclick="showTab('formation',this)">配置</button>
+      <button class="tab" onclick="showTab('ie',this)">サーブ</button>
+      <button class="tab" onclick="showTab('formation',this)">メンバー登録</button>
     </div>
 
     <div id="score-section">
@@ -226,6 +213,22 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
     </div>
 
     <div id="formation-section" style="display:none;">
+      <!-- メンバー登録 -->
+      <div style="margin-bottom:14px;">
+        <div class="member-header">
+          <span style="font-size:12px;font-weight:600;color:#888;letter-spacing:0.05em;">メンバー</span>
+          <span class="save-badge" id="save-badge"><span class="save-dot"></span>自動保存</span>
+        </div>
+        <div id="member-row" style="display:flex;gap:8px;">
+          <input id="name-input" type="text" placeholder="選手名（例：たなか）" maxlength="6" style="flex:1;height:42px;font-size:16px;padding:0 12px;border:1px solid #ddd;border-radius:10px;background:white;color:#111;font-family:inherit;" />
+          <button class="btn btn-primary" onclick="addMember()">追加</button>
+        </div>
+        <div id="member-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-danger-soft" onclick="clearAllMembers()">メンバーを全削除</button>
+        </div>
+      </div>
+      <div style="border-top:1px solid #f0f0f0;padding-top:14px;margin-bottom:10px;font-size:12px;font-weight:600;color:#888;letter-spacing:0.05em;">コート配置</div>
       <div id="court-area">
         <div style="flex-shrink:0;"><canvas id="court" width="260" height="380"></canvas></div>
         <div style="flex:1 1 120px;display:flex;flex-direction:column;gap:10px;">
@@ -301,6 +304,12 @@ function updateTeamNames(){
   document.getElementById('score-our-name').textContent=ourTeamName;
   document.getElementById('score-them-name').textContent=themTeamName;
   try{localStorage.setItem(TEAM_KEY,JSON.stringify({our:ourTeamName,them:themTeamName}));}catch(e){}
+}
+function saveTournament(){
+  try{localStorage.setItem('vb_tournament',document.getElementById('tournament-name').value);}catch(e){}
+}
+function loadTournament(){
+  try{const v=localStorage.getItem('vb_tournament');if(v)document.getElementById('tournament-name').value=v;}catch(e){}
 }
 function loadTeamNames(){
   try{
@@ -389,7 +398,8 @@ function endSet(){
 function buildShareText(){
   const r=pendingSetResult;
   const nl='\n';
-  let text='\uD83C\uDFD0 第'+r.setNum+'セット'+nl;
+  const tname=document.getElementById('tournament-name').value;
+  let text=(tname?tname+' '+nl:'')+'\uD83C\uDFD0 第'+r.setNum+'セット'+nl;
   text+=ourTeamName+' '+r.our+' - '+r.them+' '+themTeamName+nl;
 
   // logは新しい順→古い順に逆転
@@ -501,7 +511,8 @@ function updateServeMode(mode){
     blockOur.style.border='3px solid #185FA5';
     blockOur.style.background='#EBF4FD';
     blockOur.style.opacity='1';
-    labelOur.textContent='🏐 自チームサーブ中';
+    const cs=getCurrentServer();
+    labelOur.textContent='🏐 '+(cs?cs.name+'がサーブ中':'自チームサーブ中');
     labelOur.style.color='#185FA5';
     blockThem.style.border='3px solid #ddd';
     blockThem.style.background='#f8f8f8';
@@ -520,6 +531,21 @@ function updateServeMode(mode){
     labelOur.textContent='自チームサーブ中';
     labelOur.style.color='#999';
   }
+  // テーブルの強調を更新
+  renderServeHighlight();
+}
+
+function renderServeHighlight(){
+  if(!document.getElementById('ie-serve-body'))return;
+  const rows=document.getElementById('ie-serve-body').querySelectorAll('tr');
+  const cs=getCurrentServer();
+  rows.forEach(tr=>{
+    const nameCell=tr.querySelector('td');
+    if(!nameCell)return;
+    const isHighlight=serveMode==='our'&&cs&&nameCell.textContent.includes(cs.name);
+    tr.style.background=isHighlight?'#EBF4FD':'';
+    tr.style.outline=isHighlight?'2px solid #185FA5':'';
+  });
 }
 
 function changeIEServe(name,type,delta){
@@ -673,15 +699,37 @@ function renderServeOrderList(){
     const color=m?m.color:'#888';
     const row=document.createElement('div');
     row.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f0f0f0;';
+    // 他の選手が使用済みの番号を取得
+    const usedByOthers=new Set(
+      courtPlayers.filter(n=>n!==name)
+        .map(n=>{ const s=serveOrder.find(x=>x.name===n); return s?s.order:null; })
+        .filter(Boolean)
+    );
+    const options='<option value="">-</option>'+
+      [1,2,3,4,5,6]
+        .filter(n=>!usedByOthers.has(n)||n==currentOrder)
+        .map(n=>'<option value="'+n+'"'+(currentOrder==n?' selected':'')+'>'+n+'</option>')
+        .join('');
     row.innerHTML=
       '<span class="chip-dot" style="background:'+color+';display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;"></span>'+
       '<span style="flex:1;font-size:14px;">'+name+'</span>'+
-      '<select data-name="'+name+'" style="width:60px;height:34px;border:1px solid #ddd;border-radius:8px;font-size:14px;text-align:center;font-family:inherit;">'+
-        '<option value="">-</option>'+
-        [1,2,3,4,5,6].map(n=>'<option value="'+n+'"'+(currentOrder==n?' selected':'')+'>'+n+'</option>').join('')+
-      '</select>';
+      '<select data-name="'+name+'" onchange="onServeOrderChange(this)" style="width:60px;height:34px;border:1px solid #ddd;border-radius:8px;font-size:14px;text-align:center;font-family:inherit;">'+options+'</select>';
     list.appendChild(row);
   });
+}
+
+function onServeOrderChange(sel){
+  const name=sel.dataset.name;
+  const val=parseInt(sel.value);
+  if(!isNaN(val)){
+    const existing=serveOrder.find(s=>s.name===name);
+    if(existing)existing.order=val;
+    else serveOrder.push({name,order:val});
+  } else {
+    serveOrder=serveOrder.filter(s=>s.name!==name);
+  }
+  // 他のセレクトを再描画（使用済み番号を更新）
+  renderServeOrderList();
 }
 
 function applyServeOrder(){
@@ -782,6 +830,7 @@ function renderBenchChip(name){
   document.getElementById('bench').appendChild(chip);
 }
 
+loadTournament();
 loadTeamNames();
 loadMembers();
 updateScore();
