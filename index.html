@@ -292,10 +292,15 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 <script>
 const SUPABASE_URL='https://ftxfgztnhzvzffscsgan.supabase.co';
 const PASSPHRASE='Kiku';
+const PASSPHRASE_VIEW='Miru';
+let viewMode=false;
+let pollInterval=null;
 const SUPABASE_KEY='sb_publishable_coz8P8UTczQFs66LFg9r-A_ulAgq9jy';
 let sbClient=null;
 let syncEnabled=false;
 let syncChannel=null;
+let lastUpdatedAt='';
+let pollTimer=null;
 
 const CW=260, CH=380;
 const canvas=document.getElementById('court');
@@ -986,21 +991,162 @@ checkPassphrase();
 function checkPassphrase(){
   const saved=localStorage.getItem('vb_pass');
   if(saved===PASSPHRASE){ initSupabase(); return; }
+  if(saved===PASSPHRASE_VIEW){ startViewMode(); return; }
   updateSyncUI('error');
   document.getElementById('sync-status').textContent='🔴 タップして接続';
 }
 
 function onSyncStatusTap(){
-  if(syncEnabled)return;
+  if(syncEnabled||viewMode)return;
   const val=window.prompt('合言葉を入力してください');
   if(val===null)return;
   if(val===PASSPHRASE){
     localStorage.setItem('vb_pass',PASSPHRASE);
     updateSyncUI('connecting');
     initSupabase();
+  } else if(val===PASSPHRASE_VIEW){
+    localStorage.setItem('vb_pass_view',PASSPHRASE_VIEW);
+    startViewMode();
   } else if(val!==''){
     alert('合言葉が違います');
   }
+}
+
+function startViewMode(){
+  viewMode=true;
+  // タブを閲覧用に制限
+  document.querySelectorAll('.tab').forEach(t=>{
+    if(t.textContent.trim()==='設定') t.style.display='none';
+  });
+  // サーブタブを非表示
+  document.querySelectorAll('.tab').forEach(t=>{
+    if(t.textContent.trim()==='サーブ') t.style.display='none';
+  });
+  // スコアのボタン類を非表示
+  disableInputs();
+  // ステータス表示
+  const el=document.getElementById('sync-status');
+  if(el){el.textContent='👁 閲覧モード';el.style.color='#854F0B';el.style.cursor='default';}
+  // ポーリング開始（5秒ごと）
+  fetchAndApply();
+  pollInterval=setInterval(fetchAndApply,5000);
+}
+
+async function fetchAndApply(){
+  if(!sbClient){
+    sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  }
+  try{
+    const {data,error}=await sbClient.from('match_data').select('data').eq('id','current').single();
+    if(error)throw error;
+    if(data&&data.data&&Object.keys(data.data).length>0){
+      applyRemoteData(data.data);
+    }
+  }catch(e){console.error('fetch error:',e);}
+}
+
+function disableInputs(){
+  // スコアタブのボタンを非活性化
+  ['plus-our','plus-them'].forEach(cls=>{
+    document.querySelectorAll('.'+cls).forEach(b=>{b.disabled=true;b.style.opacity='0.3';});
+  });
+  document.querySelectorAll('.sbtn').forEach(b=>{b.disabled=true;b.style.opacity='0.3';});
+  document.querySelectorAll('.btn').forEach(b=>{
+    if(['セット終了','全リセット','☁️ データを保存'].some(t=>b.textContent.includes(t))){
+      b.style.display='none';
+    }
+  });
+  // ログエリアのみ表示するシンプルビューに
+  const logTitle=document.querySelector('.panel-title');
+}
+
+function startViewMode(){
+  viewMode=true;
+  updateSyncUI('view');
+  applyViewMode();
+  // ポーリング開始（5秒ごと）
+  fetchRemoteData();
+  pollInterval=setInterval(fetchRemoteData,5000);
+}
+
+async function fetchRemoteData(){
+  if(!sbClient){
+    sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  }
+  try{
+    const {data,error}=await sbClient.from('match_data').select('data').eq('id','current').single();
+    if(!error&&data&&data.data&&Object.keys(data.data).length>0){
+      applyRemoteData(data.data);
+    }
+  }catch(e){ console.error('fetch error:',e); }
+}
+
+
+
+function startViewMode(){
+  syncEnabled=true;
+  updateSyncUI('view');
+  applyViewMode();
+  // ポーリングで5秒ごとに更新（WebSocket不使用）
+  fetchRemoteData();
+  setInterval(fetchRemoteData, 5000);
+}
+
+async function fetchRemoteData(){
+  try{
+    if(!sbClient) sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    const {data,error}=await sbClient.from('match_data').select('data').eq('id','current').single();
+    if(error)throw error;
+    if(data&&data.data&&Object.keys(data.data).length>0){
+      applyRemoteData(data.data);
+    }
+  }catch(e){console.error('fetch error:',e);}
+}
+
+
+
+function startViewMode(){
+  viewMode=true;
+  syncEnabled=false;
+  updateSyncUI('view');
+  applyViewMode();
+  fetchViewData();
+  setInterval(fetchViewData,5000);
+}
+
+async function fetchViewData(){
+  try{
+    if(!sbClient) sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    const {data,error}=await sbClient.from('match_data').select('data').eq('id','current').single();
+    if(error)throw error;
+    if(data&&data.data&&Object.keys(data.data).length>0){
+      applyRemoteData(data.data);
+    }
+  }catch(e){console.error('view fetch error:',e);}
+}
+
+function applyViewMode(){
+  // タブをスコアと閲覧専用のみに
+  document.querySelectorAll('.tab').forEach(t=>{
+    if(t.textContent.trim()==='サーブ'||t.textContent.trim()==='設定'){
+      t.style.display='none';
+    }
+  });
+  // スコアタブのボタン類を無効化
+  ['our','them'].forEach(side=>{
+    document.querySelectorAll('.sbtn').forEach(b=>b.disabled=true);
+  });
+  document.querySelectorAll('.btn').forEach(b=>{
+    if(b.textContent.includes('セット終了')||b.textContent.includes('全リセット')||b.textContent.includes('データを保存')||b.textContent.includes('読み込み')){
+      b.style.display='none';
+    }
+  });
+  // スコアタブに閲覧中バナーを追加
+  const banner=document.createElement('div');
+  banner.style.cssText='background:#FAF0D9;border:1px solid #EF9F27;border-radius:10px;padding:8px 12px;font-size:12px;color:#854F0B;margin-bottom:12px;text-align:center;';
+  banner.textContent='👁 閲覧モード：5秒ごとに自動更新されます';
+  const scoreSection=document.getElementById('score-section');
+  if(scoreSection) scoreSection.insertBefore(banner, scoreSection.firstChild);
 }
 
 async function initSupabase(){
@@ -1012,25 +1158,40 @@ async function initSupabase(){
     if(error)throw error;
     if(data&&data.data&&Object.keys(data.data).length>0){
       const remote=data.data;
-      // ローカルが空なら自動でリモートを読み込む
       if(ourScore===0&&themScore===0&&sets.length===0){
         applyRemoteData(remote);
       }
     }
-    // リアルタイム購読
-    syncChannel=sbClient.channel('match_data_changes')
-      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'match_data'},payload=>{
-        if(payload.new&&payload.new.data){
-          applyRemoteData(payload.new.data);
-        }
-      })
-      .subscribe();
     syncEnabled=true;
     updateSyncUI('connected');
+    // WebSocketの代わりに5秒ポーリング（Safari対応）
+    startPolling();
   }catch(e){
     console.error('Supabase init error:',e);
     updateSyncUI('error');
   }
+}
+
+
+function startPolling(){
+  if(pollingTimer)clearInterval(pollingTimer);
+  pollingTimer=setInterval(async()=>{
+    if(!syncEnabled||!sbClient||viewMode)return;
+    try{
+      const {data,error}=await sbClient.from('match_data').select('data,updated_at').eq('id','current').single();
+      if(error||!data)return;
+      // 更新があった場合のみ適用
+      if(data.updated_at&&data.updated_at!==lastUpdatedAt){
+        lastUpdatedAt=data.updated_at;
+        // 自分が最後に更新したデータは無視（自分のpushと衝突しない）
+        if(data.data&&Object.keys(data.data).length>0){
+          applyRemoteData(data.data);
+        }
+      }
+    }catch(e){
+      console.error('polling error:',e);
+    }
+  },5000);
 }
 
 function applyRemoteData(remote){
@@ -1061,7 +1222,7 @@ async function manualPush(){
 }
 
 async function pushToSupabase(){
-  if(!syncEnabled||!sbClient)return;
+  if(!syncEnabled||!sbClient||viewMode)return;
   const payload={
     ourTeamName,themTeamName,
     tournament:document.getElementById('tournament-name').value||'',
@@ -1071,10 +1232,13 @@ async function pushToSupabase(){
     serveOrder,
   };
   try{
-    const {error}=await sbClient.from('match_data').upsert({id:'current',data:payload,updated_at:new Date().toISOString()});
+    const now=new Date().toISOString();
+    const {error}=await sbClient.from('match_data').upsert({id:'current',data:payload,updated_at:now});
     if(error){
       console.error('push error:',error);
       updateSyncUI('error');
+    } else {
+      lastPushedAt=now;
     }
   }catch(e){
     console.error('push error:',e);
@@ -1087,7 +1251,8 @@ function updateSyncUI(status){
   if(!el)return;
   if(status==='connecting'){el.textContent='🔄 接続中...';el.style.color='#888';}
   else if(status==='connected'){el.textContent='🟢 同期中';el.style.color='#3B6D11';}
-  else{el.textContent='🔴 オフライン';el.style.color='#A32D2D';}
+  else if(status==='view'){el.textContent='👁 閲覧中';el.style.color='#854F0B';el.style.textDecoration='none';el.style.cursor='default';}
+  else{el.textContent='🔴 タップして接続';el.style.color='#A32D2D';}
 }
 </script>
 </body>
