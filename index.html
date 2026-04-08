@@ -511,7 +511,20 @@ function updateServeMode(mode){
   const labelOur=document.getElementById('ie-our-serve-label');
   const labelThem=document.getElementById('ie-them-serve-label');
   if(!blockOur||!blockThem)return;
-  if(mode==='our'){
+  const isStart=ourScore===0&&themScore===0;
+  if(isStart){
+    // 0-0の試合開始直後: 両方有効、強調なし
+    blockOur.style.border='1px solid #ddd';
+    blockOur.style.background='#f8f8f8';
+    blockOur.style.opacity='1';
+    labelOur.textContent='自チームサーブ中';
+    labelOur.style.color='#888';
+    blockThem.style.border='1px solid #ddd';
+    blockThem.style.background='#f8f8f8';
+    blockThem.style.opacity='1';
+    labelThem.textContent='相手サーブ中';
+    labelThem.style.color='#888';
+  } else if(mode==='our'){
     blockOur.style.border='3px solid #185FA5';
     blockOur.style.background='#EBF4FD';
     blockOur.style.opacity='1';
@@ -520,7 +533,7 @@ function updateServeMode(mode){
     labelOur.style.color='#185FA5';
     blockThem.style.border='1px solid #ddd';
     blockThem.style.background='#f8f8f8';
-    blockThem.style.opacity='1';
+    blockThem.style.opacity='0.45';
     labelThem.textContent='相手サーブ中';
     labelThem.style.color='#999';
   } else {
@@ -531,7 +544,7 @@ function updateServeMode(mode){
     labelThem.style.color='#A32D2D';
     blockOur.style.border='1px solid #ddd';
     blockOur.style.background='#f8f8f8';
-    blockOur.style.opacity='1';
+    blockOur.style.opacity='0.45';
     labelOur.textContent='自チームサーブ中';
     labelOur.style.color='#999';
   }
