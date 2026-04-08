@@ -1132,10 +1132,10 @@ function applyViewMode(){
       t.style.display='none';
     }
   });
-  // スコアタブのボタン類を無効化
-  ['our','them'].forEach(side=>{
-    document.querySelectorAll('.sbtn').forEach(b=>b.disabled=true);
-  });
+  // スコアボードのボタンを非表示
+  document.querySelectorAll('.sbtn').forEach(b=>b.style.display='none');
+  // score-btnsエリアごと非表示
+  document.querySelectorAll('.score-btns').forEach(b=>b.style.display='none');
   document.querySelectorAll('.btn').forEach(b=>{
     if(b.textContent.includes('セット終了')||b.textContent.includes('全リセット')||b.textContent.includes('データを保存')||b.textContent.includes('読み込み')){
       b.style.display='none';
