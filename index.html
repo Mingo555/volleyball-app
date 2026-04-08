@@ -139,7 +139,7 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
         <button class="btn" onclick="resetAll()">全リセット</button>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-        <button class="btn btn-primary" onclick="saveMatchJSON()" style="font-size:13px;">💾 試合データを保存</button>
+        <button class="btn btn-primary" onclick="manualPush()" style="font-size:13px;">☁️ データを保存</button>
         <label class="btn" style="font-size:13px;cursor:pointer;">📂 読み込み<input type="file" accept=".json" onchange="loadMatchJSON(event)" style="display:none;"></label>
       </div>
       <div class="panel-title">得点ログ</div>
@@ -542,34 +542,6 @@ function updateSetHistory(){
     return `<div class="set-row"><span class="set-row-label">第${i+1}セット</span><span class="set-row-score ${cls}">${s.our} - ${s.them}</span></div>`;
   }).join('');
 }
-function saveMatchJSON(){
-  const tournament=document.getElementById('tournament-name').value||'';
-  const data={
-    version:1,
-    savedAt:new Date().toISOString(),
-    tournament,
-    ourTeamName,
-    themTeamName,
-    sets,
-    currentScore:{our:ourScore,them:themScore},
-    ieData,
-    recvOk,
-    recvLoss,
-    log,
-    members,
-    serveOrder,
-  };
-  const json=JSON.stringify(data,null,2);
-  const blob=new Blob([json],{type:'application/json'});
-  const a=document.createElement('a');
-  const date=new Date().toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'}).replace('/','-');
-  const name=(tournament||ourTeamName+'vs'+themTeamName)+'_'+date+'.json';
-  a.href=URL.createObjectURL(blob);
-  a.download=name;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
 function loadMatchJSON(event){
   const file=event.target.files[0];
   if(!file)return;
@@ -682,6 +654,18 @@ function renderServeHighlight(){
 }
 
 function changeIEServe(name,type,delta){
+  if(delta===1){
+    // 非アクティブブロックの操作チェック
+    if(serveMode==='them'&&(ourScore>0||themScore>0)){
+      if(!confirm('現在は相手サーブ中です。\n自チームサーブの操作をしますか？'))return;
+      updateServeMode('our');
+    }
+    // サーブ順でない人が決まったを押した場合
+    const cs=getCurrentServer();
+    if(type==='plus'&&serveOrder.length>0&&cs&&cs.name!==name){
+      if(!confirm(cs.name+'がサーブ順ですが、'+name+'の「決まった」を記録しますか？'))return;
+    }
+  }
   if(!ieData[name])ieData[name]={plus:0,minus:0};
   ieData[name][type]=Math.max(0,ieData[name][type]+delta);
   if(delta===1){
@@ -1044,6 +1028,15 @@ function applyRemoteData(remote){
   if(currentTab==='ie')renderIE();
 }
 
+async function manualPush(){
+  if(!syncEnabled||!sbClient){
+    alert('Supabaseに接続されていません。合言葉を確認してください。');
+    return;
+  }
+  await pushToSupabase();
+  alert('保存しました！');
+}
+
 async function pushToSupabase(){
   if(!syncEnabled||!sbClient)return;
   const payload={
@@ -1055,8 +1048,15 @@ async function pushToSupabase(){
     serveOrder,
   };
   try{
-    await sbClient.from('match_data').update({data:payload,updated_at:new Date().toISOString()}).eq('id','current');
-  }catch(e){console.error('push error:',e);}
+    const {error}=await sbClient.from('match_data').upsert({id:'current',data:payload,updated_at:new Date().toISOString()});
+    if(error){
+      console.error('push error:',error);
+      updateSyncUI('error');
+    }
+  }catch(e){
+    console.error('push error:',e);
+    updateSyncUI('error');
+  }
 }
 
 function updateSyncUI(status){
