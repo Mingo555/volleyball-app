@@ -98,7 +98,6 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
 .bench-box { background: #f8f8f8; border: 2px dashed #ddd; border-radius: 12px; min-height: 56px; padding: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
 .safe-bottom { height: env(safe-area-inset-bottom, 20px); }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="app">
@@ -289,11 +288,12 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'N
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL='https://ftxfgztnhzvzffscsgan.supabase.co';
+const SUPABASE_URL='https://ftxfgztnhzvzffscsgan.sbClient.co';
 const PASSPHRASE='Kiku';
 const SUPABASE_KEY='sb_publishable_coz8P8UTczQFs66LFg9r-A_ulAgq9jy';
-let supabase=null;
+let sbClient=null;
 let syncEnabled=false;
 let syncChannel=null;
 
@@ -998,10 +998,10 @@ function checkPassphrase(){
 
 async function initSupabase(){
   try{
-    supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
     updateSyncUI('connecting');
     // 既存データを取得
-    const {data,error}=await supabase.from('match_data').select('data').eq('id','current').single();
+    const {data,error}=await sbClient.from('match_data').select('data').eq('id','current').single();
     if(error)throw error;
     if(data&&data.data&&Object.keys(data.data).length>0){
       const remote=data.data;
@@ -1011,7 +1011,7 @@ async function initSupabase(){
       }
     }
     // リアルタイム購読
-    syncChannel=supabase.channel('match_data_changes')
+    syncChannel=sbClient.channel('match_data_changes')
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'match_data'},payload=>{
         if(payload.new&&payload.new.data){
           applyRemoteData(payload.new.data);
@@ -1045,7 +1045,7 @@ function applyRemoteData(remote){
 }
 
 async function pushToSupabase(){
-  if(!syncEnabled||!supabase)return;
+  if(!syncEnabled||!sbClient)return;
   const payload={
     ourTeamName,themTeamName,
     tournament:document.getElementById('tournament-name').value||'',
@@ -1055,7 +1055,7 @@ async function pushToSupabase(){
     serveOrder,
   };
   try{
-    await supabase.from('match_data').update({data:payload,updated_at:new Date().toISOString()}).eq('id','current');
+    await sbClient.from('match_data').update({data:payload,updated_at:new Date().toISOString()}).eq('id','current');
   }catch(e){console.error('push error:',e);}
 }
 
