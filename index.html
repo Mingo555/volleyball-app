@@ -653,13 +653,18 @@ function renderServeHighlight(){
   });
 }
 
+function isInactive(){
+  // 0-0は両方アクティブなので確認不要
+  return ourScore===0&&themScore===0 ? false : true;
+}
+
 function changeIEServe(name,type,delta){
+  // 相手サーブ中に自チームサーブを操作（加算・取消どちらも）
+  if(serveMode==='them'&&isInactive()){
+    if(!confirm('現在は相手サーブ中です。\n自チームサーブの操作をしますか？'))return;
+    updateServeMode('our');
+  }
   if(delta===1){
-    // 非アクティブブロックの操作チェック
-    if(serveMode==='them'&&(ourScore>0||themScore>0)){
-      if(!confirm('現在は相手サーブ中です。\n自チームサーブの操作をしますか？'))return;
-      updateServeMode('our');
-    }
     // サーブ順でない人が決まったを押した場合
     const cs=getCurrentServer();
     if(type==='plus'&&serveOrder.length>0&&cs&&cs.name!==name){
@@ -679,12 +684,23 @@ function changeIEServe(name,type,delta){
 }
 
 function changeRecvOk(delta){
+  // 自チームサーブ中に相手サーブブロックを操作（加算・取消どちらも）
+  if(serveMode==='our'&&isInactive()){
+    if(!confirm('現在は自チームサーブ中です。\n相手サーブ中の操作をしますか？'))return;
+    updateServeMode('them');
+  }
   recvOk=Math.max(0,recvOk+delta);
   document.getElementById('recv-ok-val').textContent=recvOk;
   if(delta===1){addPoint('our',1,'相手サーブ→カット成功');updateServeMode('our');}
   else if(ourScore>0){addPoint('our',-1);updateServeMode('them');}
 }
+
 function changeRecvLoss2(delta){
+  // 自チームサーブ中に相手サーブブロックを操作（加算・取消どちらも）
+  if(serveMode==='our'&&isInactive()){
+    if(!confirm('現在は自チームサーブ中です。\n相手サーブ中の操作をしますか？'))return;
+    updateServeMode('them');
+  }
   recvLoss=Math.max(0,recvLoss+delta);
   document.getElementById('recv-loss-val').textContent=recvLoss;
   if(delta===1)addPoint('them',1,'相手サーブ→カット失敗');
